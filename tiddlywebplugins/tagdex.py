@@ -21,12 +21,8 @@ def tiddler_put_hook(store, tiddler):
         cur = conn.cursor()
 
         # fetch or create tiddler
-        tid_id = (cur.execute('SELECT id FROM tiddlers ' +
-                'WHERE title = ? AND bag = ?', (tiddler.title, tiddler.bag)).
-                fetchall())
-        if len(tid_id):
-            tid_id = tid_id[0][0]
-        else:
+        tid_id = _fetch_tiddler_id(tiddler, cur)
+        if not tid_id:
             tid_id = cur.execute('INSERT INTO tiddlers VALUES (?, ?, ?)',
                 (None, tiddler.title, tiddler.bag)).lastrowid
 
@@ -39,11 +35,8 @@ def tiddler_put_hook(store, tiddler):
 
         for tag in tiddler.tags:
             # fetch or create tag
-            tag_id = (cur.execute('SELECT id FROM tags WHERE name = ?', (tag,)).
-                    fetchall())
-            if len(tag_id):
-                tag_id = tag_id[0][0]
-            else:
+            tag_id = _fetch_tag_id(tag, cur)
+            if not tag_id:
                 tag_id = cur.execute('INSERT INTO tags VALUES (?, ?)',
                     (None, tag)).lastrowid
 
@@ -86,6 +79,25 @@ def _remove_orphan_tag(tag_id, cursor):
             'WHERE tag_id = ?', (tag_id,)).fetchone()[0]
     if rel_count == 0:
         cursor.execute('DELETE FROM tags WHERE id = ?', (tag_id,))
+
+
+def _fetch_tiddler_id(tiddler, cursor):
+    tid_id = (cursor.execute('SELECT id FROM tiddlers ' +
+            'WHERE title = ? AND bag = ?', (tiddler.title, tiddler.bag)).
+            fetchone())
+    try:
+        return tid_id[0]
+    except TypeError:
+        return False
+
+
+def _fetch_tag_id(tag, cursor):
+    tag_id = (cursor.execute('SELECT id FROM tags WHERE name = ?', (tag,)).
+            fetchone())
+    try:
+        return tag_id[0]
+    except TypeError:
+        return False
 
 
 def _db_path(config): # XXX: partially duplicates text store's `_fixup_root` method

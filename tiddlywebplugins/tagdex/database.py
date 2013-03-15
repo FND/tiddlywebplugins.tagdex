@@ -23,6 +23,37 @@ class Connection(object): # TODO: reuse connections for efficiency?
         self.conn.close()
 
 
+def fetch_tiddler_id(tiddler, cursor):
+    tid_id = (cursor.execute('SELECT id FROM tiddlers ' +
+            'WHERE title = ? AND bag = ?', (tiddler.title, tiddler.bag)).
+            fetchone())
+    try:
+        return tid_id[0]
+    except TypeError:
+        return False
+
+
+def fetch_tag_id(tag_name, cursor):
+    tag_id = (cursor.execute('SELECT id FROM tags WHERE name = ?', (tag_name,)).
+            fetchone())
+    try:
+        return tag_id[0]
+    except TypeError:
+        return False
+
+
+def initialize(cursor):
+    """
+    create database tables
+    """
+    pk = 'INTEGER PRIMARY KEY AUTOINCREMENT'
+    # TODO: use `executescript`?
+    cursor.execute('CREATE TABLE tags (id %s, name TEXT)' % pk)
+    cursor.execute('CREATE TABLE tiddlers (id %s, title TEXT, bag TEXT)' % pk)
+    cursor.execute('CREATE TABLE tiddler_tags ' +
+            '(tiddler_id INTEGER, tag_id INTEGER)')
+
+
 def _db_path(config): # XXX: partially duplicates text store's `_fixup_root` method
     path = config['tagdex_db']
     if not os.path.isabs(path):

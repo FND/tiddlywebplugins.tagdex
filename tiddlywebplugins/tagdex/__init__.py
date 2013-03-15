@@ -8,7 +8,7 @@ from . import database
 def init(config):
     with database.Connection(config, True) as (conn, cur): # TODO: emit friendly error message if configuration parameter is missing
         try:
-            initialize_database(cur)
+            database.initialize(cur)
         except sqlite3.OperationalError: # already exists -- XXX: too magical?
             pass
 
@@ -18,7 +18,7 @@ def tiddler_put_hook(store, tiddler):
 
     with database.Connection(config, True) as (conn, cur):
         # fetch or create tiddler
-        tid_id = _fetch_tiddler_id(tiddler, cur)
+        tid_id = database.fetch_tiddler_id(tiddler, cur)
         if not tid_id:
             tid_id = cur.execute('INSERT INTO tiddlers VALUES (?, ?, ?)',
                 (None, tiddler.title, tiddler.bag)).lastrowid
@@ -32,7 +32,7 @@ def tiddler_put_hook(store, tiddler):
 
         for tag in tiddler.tags:
             # fetch or create tag
-            tag_id = _fetch_tag_id(tag, cur)
+            tag_id = database.fetch_tag_id(tag, cur)
             if not tag_id:
                 tag_id = cur.execute('INSERT INTO tags VALUES (?, ?)',
                     (None, tag)).lastrowid
@@ -53,7 +53,7 @@ def tiddler_delete_hook(store, tiddler):
     config = store.environ['tiddlyweb.config']
 
     with database.Connection(config, True) as (conn, cur):
-        tid_id = _fetch_tiddler_id(tiddler, cur)
+        tid_id = database.fetch_tiddler_id(tiddler, cur)
         if not tid_id:
             return # XXX: should we raise an exception here? -- TODO: at least do some logging
 
@@ -64,15 +64,6 @@ def tiddler_delete_hook(store, tiddler):
         cur.execute('DELETE FROM tiddlers WHERE id = ?', (tid_id,))
         for tag_id in (entry[0] for entry in tag_ids):
             _remove_orphan_tag(tag_id, cur)
-
-
-def initialize_database(cursor):
-    pk = 'INTEGER PRIMARY KEY AUTOINCREMENT'
-    # TODO: use `executescript`?
-    cursor.execute('CREATE TABLE tags (id %s, name TEXT)' % pk)
-    cursor.execute('CREATE TABLE tiddlers (id %s, title TEXT, bag TEXT)' % pk)
-    cursor.execute('CREATE TABLE tiddler_tags ' +
-            '(tiddler_id INTEGER, tag_id INTEGER)')
 
 
 def _remove_orphan_tiddler(tid_id, cursor):
@@ -87,22 +78,3 @@ def _remove_orphan_tag(tag_id, cursor):
             'WHERE tag_id = ?', (tag_id,)).fetchone()[0]
     if rel_count == 0:
         cursor.execute('DELETE FROM tags WHERE id = ?', (tag_id,))
-
-
-def _fetch_tiddler_id(tiddler, cursor):
-    tid_id = (cursor.execute('SELECT id FROM tiddlers ' +
-            'WHERE title = ? AND bag = ?', (tiddler.title, tiddler.bag)).
-            fetchone())
-    try:
-        return tid_id[0]
-    except TypeError:
-        return False
-
-
-def _fetch_tag_id(tag, cursor):
-    tag_id = (cursor.execute('SELECT id FROM tags WHERE name = ?', (tag,)).
-            fetchone())
-    try:
-        return tag_id[0]
-    except TypeError:
-        return False

@@ -30,7 +30,7 @@ def test_reinitialization():
     assert os.path.isfile(DB)
 
 
-def test_indexing():
+def test_indexing_on_create_and_modify():
     tiddler = UserDict()
     tiddler.title = 'HelloWorld'
     tiddler.bag = 'alpha'
@@ -67,6 +67,27 @@ def test_indexing():
     assert len(tids) == 0
     assert len(tags) == 0
     assert len(rels) == 0
+
+
+def test_key_on_title_and_bag():
+    tiddler = UserDict()
+    tiddler.title = 'HelloWorld'
+    tiddler.bag = 'alpha'
+    tiddler.tags = ['foo', 'bar']
+    tagdex.tiddler_put_hook(STORE, tiddler)
+
+    tids, tags, rels = _retrieve_all()
+    assert len(tids) == 1
+    assert len(tags) == 2
+    assert len(rels) == 2
+
+    tiddler.bag = 'bravo'
+    tagdex.tiddler_put_hook(STORE, tiddler)
+
+    tids, tags, rels = _retrieve_all()
+    assert len(tids) == 2
+    assert len(tags) == 2
+    assert len(rels) == 4
 
 
 def _retrieve_all():

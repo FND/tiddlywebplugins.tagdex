@@ -3,6 +3,8 @@ import sqlite3
 
 from UserDict import UserDict # XXX: is this what we want?
 
+from tiddlyweb.store import HOOKS
+
 import tiddlywebplugins.tagdex as tagdex
 import tiddlywebplugins.tagdex.hooks as hooks
 import tiddlywebplugins.tagdex.database as database
@@ -25,8 +27,11 @@ def test_initialization():
     tagdex.init(CONFIG)
     assert os.path.isfile(DB)
 
+    assert hooks.tiddler_put_hook in HOOKS['tiddler']['put']
+    assert hooks.tiddler_delete_hook in HOOKS['tiddler']['delete']
 
-def test_reinitialization():
+
+def test_database_reinitialization():
     assert os.path.isfile(DB)
     tagdex.init(CONFIG) # should not raise
     assert os.path.isfile(DB)

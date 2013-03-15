@@ -22,24 +22,26 @@ def tiddler_put_hook(store, tiddler):
 
         for tag in tiddler.tags:
             # fetch or create tiddler
-            tid_id = cur.execute('SELECT id FROM tiddlers WHERE title = ?',
-                    (tiddler.title,))
+            tid_id = cur.execute('SELECT COUNT(*) FROM tiddlers WHERE title = ?',
+                    (tiddler.title,)).fetchone()[0]
             if not tid_id:
                 tid_id = cur.execute('INSERT INTO tiddlers VALUES (?, ?, ?)',
                     (None, tiddler.title, tiddler.bag)).lastrowid
 
             # fetch or create tag
-            tag_id = cur.execute('SELECT id FROM tags WHERE name = ?', (tag,))
+            tag_id = cur.execute('SELECT COUNT(*) FROM tags WHERE name = ?',
+                    (tag,)).fetchone()[0]
             if not tag_id:
                 tag_id = cur.execute('INSERT INTO tags VALUES (?, ?)',
                     (None, tag)).lastrowid
 
             # check or create association
-            rel_id = cur.execute('SELECT * FROM tiddler_tags ' +
-                    'WHERE tiddler_id = ? AND tag_id = ?', (tid_id, tag_id))
+            rel_id = cur.execute('SELECT COUNT(*) FROM tiddler_tags ' +
+                    'WHERE tiddler_id = ? AND tag_id = ?',
+                    (tid_id, tag_id)).fetchone()[0]
             if not rel_id:
                 cur.execute('INSERT INTO tiddler_tags VALUES (?, ?)',
-                    (tid_id, tag_id))
+                        (tid_id, tag_id))
 
         conn.commit()
 

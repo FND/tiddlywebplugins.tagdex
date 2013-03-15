@@ -4,6 +4,7 @@ import sqlite3
 from UserDict import UserDict # XXX: is this what we want?
 
 import tiddlywebplugins.tagdex as tagdex
+import tiddlywebplugins.tagdex.hooks as hooks
 import tiddlywebplugins.tagdex.database as database
 
 
@@ -38,7 +39,7 @@ def test_indexing_on_create_and_modify():
     tiddler.tags = ['foo', 'bar']
 
     for i in xrange(2): # ensures dupes are ignored
-        tagdex.tiddler_put_hook(STORE, tiddler)
+        hooks.tiddler_put_hook(STORE, tiddler)
 
         tids, tags, rels = _retrieve_all()
         assert len(tids) == 1
@@ -51,7 +52,7 @@ def test_indexing_on_create_and_modify():
         assert (tids[0][0], tags[1][0]) in rels
 
     tiddler.tags = ['baz']
-    tagdex.tiddler_put_hook(STORE, tiddler)
+    hooks.tiddler_put_hook(STORE, tiddler)
 
     tids, tags, rels = _retrieve_all()
     assert len(tids) == 1
@@ -62,7 +63,7 @@ def test_indexing_on_create_and_modify():
     assert (tids[0][0], tags[0][0]) in rels
 
     tiddler.tags = []
-    tagdex.tiddler_put_hook(STORE, tiddler)
+    hooks.tiddler_put_hook(STORE, tiddler)
 
     tids, tags, rels = _retrieve_all()
     assert len(tids) == 0
@@ -75,7 +76,7 @@ def test_key_on_title_and_bag():
     tiddler.title = 'HelloWorld'
     tiddler.bag = 'alpha'
     tiddler.tags = ['foo', 'bar']
-    tagdex.tiddler_put_hook(STORE, tiddler)
+    hooks.tiddler_put_hook(STORE, tiddler)
 
     tids, tags, rels = _retrieve_all()
     assert len(tids) == 1
@@ -83,7 +84,7 @@ def test_key_on_title_and_bag():
     assert len(rels) == 2
 
     tiddler.bag = 'bravo'
-    tagdex.tiddler_put_hook(STORE, tiddler)
+    hooks.tiddler_put_hook(STORE, tiddler)
 
     tids, tags, rels = _retrieve_all()
     assert len(tids) == 2
@@ -97,24 +98,24 @@ def test_indexing_on_delete():
     tiddler.title = 'HelloWorld'
     tiddler.bag = 'alpha'
     tiddler.tags = []
-    tagdex.tiddler_put_hook(STORE, tiddler)
+    hooks.tiddler_put_hook(STORE, tiddler)
 
     tiddler.bag = 'bravo'
     tiddler.tags = ['aaa', 'bbb', 'ccc']
-    tagdex.tiddler_put_hook(STORE, tiddler)
+    hooks.tiddler_put_hook(STORE, tiddler)
 
     tiddler = UserDict()
     tiddler.title = 'LoremIpsum'
     tiddler.bag = 'bravo'
     tiddler.tags = ['...', 'bbb']
-    tagdex.tiddler_put_hook(STORE, tiddler)
+    hooks.tiddler_put_hook(STORE, tiddler)
 
     tids, tags, rels = _retrieve_all()
     assert len(tids) == 2
     assert len(tags) == 4
     assert len(rels) == 5
 
-    tagdex.tiddler_delete_hook(STORE, tiddler)
+    hooks.tiddler_delete_hook(STORE, tiddler)
 
     tids, tags, rels = _retrieve_all()
     assert len(tids) == 1

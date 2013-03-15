@@ -8,6 +8,8 @@ import tiddlywebplugins.tagdex as tagdex
 
 def setup_module(module):
     module.CONFIG = { 'tagdex_db': 'tagdex_test.sqlite' }
+    module.STORE = UserDict()
+    module.STORE.environ = { 'tiddlyweb.config': CONFIG }
     # reset database
     module.DB = tagdex._db_path(module.CONFIG)
     try:
@@ -29,15 +31,13 @@ def test_reinitialization():
 
 
 def test_indexing():
-    store = UserDict()
-    store.environ = { 'tiddlyweb.config': CONFIG }
     tiddler = UserDict()
     tiddler.title = 'HelloWorld'
     tiddler.bag = 'alpha'
     tiddler.tags = ['foo', 'bar']
 
     for i in xrange(2): # ensures dupes are ignored
-        tagdex.tiddler_put_hook(store, tiddler)
+        tagdex.tiddler_put_hook(STORE, tiddler)
 
         tids, tags, rels = _retrieve_all()
         assert len(tids) == 1
@@ -50,7 +50,7 @@ def test_indexing():
         assert (tids[0][0], tags[1][0]) in rels
 
     tiddler.tags = ['baz']
-    tagdex.tiddler_put_hook(store, tiddler)
+    tagdex.tiddler_put_hook(STORE, tiddler)
 
     tids, tags, rels = _retrieve_all()
     assert len(tids) == 1
@@ -61,7 +61,7 @@ def test_indexing():
     assert (tids[0][0], tags[0][0]) in rels
 
     tiddler.tags = []
-    tagdex.tiddler_put_hook(store, tiddler)
+    tagdex.tiddler_put_hook(STORE, tiddler)
 
     tids, tags, rels = _retrieve_all()
     assert len(tids) == 0

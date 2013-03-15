@@ -1,13 +1,11 @@
+import os
 import sqlite3
 
 
-DATABASE = 'tagdex.sqlite' # TODO: read from config
-
-
 def init(config):
-    #if 'selector' in config: # system plugin
+    db = _db_path(config)
 
-    with sqlite3.connect(DATABASE) as conn:
+    with sqlite3.connect(db) as conn:
         cur = conn.cursor()
         try:
             initialize_database(cur)
@@ -17,9 +15,9 @@ def init(config):
 
 
 def tiddler_put_hook(store, tiddler):
-    #config = store.environ['tiddlyweb.config']
+    db = _db_path(store.environ['tiddlyweb.config'])
 
-    with sqlite3.connect(DATABASE) as conn: # TODO: reuse connections for efficiency?
+    with sqlite3.connect(db) as conn: # TODO: reuse connections for efficiency?
         cur = conn.cursor()
 
         for tag in tiddler.tags:
@@ -57,3 +55,10 @@ def initialize_database(cursor):
     cursor.execute('CREATE TABLE tiddlers (id %s, title TEXT, bag TEXT)' % pk)
     cursor.execute('CREATE TABLE tiddler_tags ' +
             '(tiddler_id INTEGER, tag_id INTEGER)')
+
+
+def _db_path(config): # XXX: partially duplicates text store's `_fixup_root` method
+    path = config['tagdex_db']
+    if not os.path.isabs(path):
+        path = os.path.join(config.get('root_dir', ''), path)
+    return path

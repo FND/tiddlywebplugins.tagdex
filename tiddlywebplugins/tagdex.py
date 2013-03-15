@@ -3,7 +3,7 @@ import sqlite3
 
 
 def init(config):
-    db = _db_path(config)
+    db = _db_path(config) # TODO: emit friendly error message if configuration parameter is missing
 
     with sqlite3.connect(db) as conn:
         cur = conn.cursor()
@@ -54,8 +54,23 @@ def tiddler_put_hook(store, tiddler):
         conn.commit()
 
 
-def tiddler_delete_hook(store, tiddler):
-    pass # TODO
+def tiddler_delete_hook(store, tiddler): # XXX: duplicates put hook's connection/cursor handling
+    db = _db_path(store.environ['tiddlyweb.config'])
+
+    with sqlite3.connect(db) as conn:
+        cur = conn.cursor()
+
+        tid_id = _fetch_tiddler_id(tiddler, cur)
+        if not tid_id:
+            return # XXX: should we raise an exception here? -- TODO: at least do some logging
+
+        # remove existing associations & orphaned tiddlers and tags -- XXX: duplicates put hook logic
+        tag_ids = cur.execute('SELECT tag_id FROM tiddler_tags ' +
+                'WHERE tiddler_id = ?', (tid_id,)).fetchall()
+        cur.execute('DELETE FROM tiddler_tags WHERE tiddler_id = ?', (tid_id,))
+        cur.execute('DELETE FROM tiddlers WHERE id = ?', (tid_id,))
+        for tag_id in (entry[0] for entry in tag_ids):
+            _remove_orphan_tag(tag_id, cur)
 
 
 def initialize_database(cursor):

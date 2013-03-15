@@ -90,6 +90,39 @@ def test_key_on_title_and_bag():
     assert len(rels) == 4
 
 
+def test_indexing_on_delete():
+    # erase previously created tiddler by blanking its tags
+    tiddler = UserDict()
+    tiddler.title = 'HelloWorld'
+    tiddler.bag = 'alpha'
+    tiddler.tags = []
+    tagdex.tiddler_put_hook(STORE, tiddler)
+
+    tiddler.bag = 'bravo'
+    tiddler.tags = ['aaa', 'bbb', 'ccc']
+    tagdex.tiddler_put_hook(STORE, tiddler)
+
+    tiddler = UserDict()
+    tiddler.title = 'LoremIpsum'
+    tiddler.bag = 'bravo'
+    tiddler.tags = ['...', 'bbb']
+    tagdex.tiddler_put_hook(STORE, tiddler)
+
+    tids, tags, rels = _retrieve_all()
+    assert len(tids) == 2
+    assert len(tags) == 4
+    assert len(rels) == 5
+
+    tagdex.tiddler_delete_hook(STORE, tiddler)
+
+    tids, tags, rels = _retrieve_all()
+    assert len(tids) == 1
+    assert tids[0][1] == 'HelloWorld'
+    assert len(tags) == 3
+    assert [tag[1] for tag in tags] == ['aaa', 'bbb', 'ccc']
+    assert len(rels) == 3
+
+
 def _retrieve_all():
     with sqlite3.connect(DB) as conn:
         cur = conn.cursor()

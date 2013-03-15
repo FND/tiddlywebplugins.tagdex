@@ -35,10 +35,7 @@ def tiddler_put_hook(store, tiddler):
                 'WHERE tiddler_id = ?', (tid_id,)).fetchall()
         cur.execute('DELETE FROM tiddler_tags WHERE tiddler_id = ?', (tid_id,))
         for tag_id in (entry[0] for entry in tag_ids):
-            rel_count = cur.execute('SELECT COUNT(*) FROM tiddler_tags ' +
-                    'WHERE tag_id = ?', (tag_id,)).fetchone()[0]
-            if rel_count == 0:
-                cur.execute('DELETE FROM tags WHERE id = ?', (tag_id,))
+            _remove_orphan_tag(tag_id, cur)
 
         for tag in tiddler.tags:
             # fetch or create tag
@@ -59,10 +56,7 @@ def tiddler_put_hook(store, tiddler):
                         (tid_id, tag_id))
 
         # remove orphaned tiddlers
-        rel_count = cur.execute('SELECT COUNT(*) FROM tiddler_tags ' +
-                'WHERE tiddler_id = ?', (tid_id,)).fetchone()[0]
-        if not rel_count:
-            cur.execute('DELETE FROM tiddlers WHERE id = ?', (tid_id,))
+        _remove_orphan_tiddler(tid_id, cur)
 
         conn.commit()
 
@@ -78,6 +72,20 @@ def initialize_database(cursor):
     cursor.execute('CREATE TABLE tiddlers (id %s, title TEXT, bag TEXT)' % pk)
     cursor.execute('CREATE TABLE tiddler_tags ' +
             '(tiddler_id INTEGER, tag_id INTEGER)')
+
+
+def _remove_orphan_tiddler(tid_id, cursor):
+    rel_count = cursor.execute('SELECT COUNT(*) FROM tiddler_tags ' +
+            'WHERE tiddler_id = ?', (tid_id,)).fetchone()[0]
+    if rel_count == 0:
+        cursor.execute('DELETE FROM tiddlers WHERE id = ?', (tid_id,))
+
+
+def _remove_orphan_tag(tag_id, cursor):
+    rel_count = cursor.execute('SELECT COUNT(*) FROM tiddler_tags ' +
+            'WHERE tag_id = ?', (tag_id,)).fetchone()[0]
+    if rel_count == 0:
+        cursor.execute('DELETE FROM tags WHERE id = ?', (tag_id,))
 
 
 def _db_path(config): # XXX: partially duplicates text store's `_fixup_root` method

@@ -49,6 +49,25 @@ def test_indexing():
         assert (tids[0][0], tags[0][0]) in rels
         assert (tids[0][0], tags[1][0]) in rels
 
+    tiddler.tags = ['baz']
+    tagdex.tiddler_put_hook(store, tiddler)
+
+    tids, tags, rels = _retrieve_all()
+    assert len(tids) == 1
+    assert tids[0][1:] == ('HelloWorld', 'alpha')
+    assert len(tags) == 1
+    assert tags[0][1:] == ('baz',)
+    assert len(rels) == 1
+    assert (tids[0][0], tags[0][0]) in rels
+
+    tiddler.tags = []
+    tagdex.tiddler_put_hook(store, tiddler)
+
+    tids, tags, rels = _retrieve_all()
+    assert len(tids) == 0
+    assert len(tags) == 0
+    assert len(rels) == 0
+
 
 def _retrieve_all():
     with sqlite3.connect(DB) as conn:

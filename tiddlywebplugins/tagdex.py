@@ -27,6 +27,16 @@ def tiddler_put_hook(store, tiddler):
             tid_id = cur.execute('INSERT INTO tiddlers VALUES (?, ?, ?)',
                 (None, tiddler.title, tiddler.bag)).lastrowid
 
+        # remove existing associations & orphaned tags
+        tag_ids = cur.execute('SELECT tag_id FROM tiddler_tags ' +
+                'WHERE tiddler_id = ?', (tid_id,)).fetchall()
+        cur.execute('DELETE FROM tiddler_tags WHERE tiddler_id = ?', (tid_id,))
+        for tag_id in (entry[0] for entry in tag_ids):
+            rel_count = cur.execute('SELECT COUNT(*) FROM tiddler_tags ' +
+                    'WHERE tag_id = ?', (tag_id,)).fetchone()[0]
+            if rel_count == 0:
+                cur.execute('DELETE FROM tags WHERE id = ?', (tag_id,))
+
         for tag in tiddler.tags:
             # fetch or create tag
             tag_id = cur.execute('SELECT COUNT(*) FROM tags WHERE name = ?',
@@ -42,6 +52,12 @@ def tiddler_put_hook(store, tiddler):
             if not rel_id:
                 cur.execute('INSERT INTO tiddler_tags VALUES (?, ?)',
                         (tid_id, tag_id))
+
+        # remove orphaned tiddlers
+        rel_count = cur.execute('SELECT COUNT(*) FROM tiddler_tags ' +
+                'WHERE tiddler_id = ?', (tid_id,)).fetchone()[0]
+        if not rel_count:
+            cur.execute('DELETE FROM tiddlers WHERE id = ?', (tid_id,))
 
         conn.commit()
 

@@ -1,25 +1,22 @@
-import os
+from __future__ import absolute_import, with_statement
+
 import sqlite3
+
+from . import database
 
 
 def init(config):
-    db = _db_path(config) # TODO: emit friendly error message if configuration parameter is missing
-
-    with sqlite3.connect(db) as conn:
-        cur = conn.cursor()
+    with database.Connection(config, True) as (conn, cur): # TODO: emit friendly error message if configuration parameter is missing
         try:
             initialize_database(cur)
         except sqlite3.OperationalError: # already exists -- XXX: too magical?
             pass
-        conn.commit()
 
 
 def tiddler_put_hook(store, tiddler):
-    db = _db_path(store.environ['tiddlyweb.config'])
+    config = store.environ['tiddlyweb.config']
 
-    with sqlite3.connect(db) as conn: # TODO: reuse connections for efficiency?
-        cur = conn.cursor()
-
+    with database.Connection(config, True) as (conn, cur):
         # fetch or create tiddler
         tid_id = _fetch_tiddler_id(tiddler, cur)
         if not tid_id:
@@ -51,15 +48,11 @@ def tiddler_put_hook(store, tiddler):
         # remove orphaned tiddlers
         _remove_orphan_tiddler(tid_id, cur)
 
-        conn.commit()
 
+def tiddler_delete_hook(store, tiddler):
+    config = store.environ['tiddlyweb.config']
 
-def tiddler_delete_hook(store, tiddler): # XXX: duplicates put hook's connection/cursor handling
-    db = _db_path(store.environ['tiddlyweb.config'])
-
-    with sqlite3.connect(db) as conn:
-        cur = conn.cursor()
-
+    with database.Connection(config, True) as (conn, cur):
         tid_id = _fetch_tiddler_id(tiddler, cur)
         if not tid_id:
             return # XXX: should we raise an exception here? -- TODO: at least do some logging
@@ -113,10 +106,3 @@ def _fetch_tag_id(tag, cursor):
         return tag_id[0]
     except TypeError:
         return False
-
-
-def _db_path(config): # XXX: partially duplicates text store's `_fixup_root` method
-    path = config['tagdex_db']
-    if not os.path.isabs(path):
-        path = os.path.join(config.get('root_dir', ''), path)
-    return path

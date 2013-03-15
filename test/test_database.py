@@ -4,6 +4,7 @@ import sqlite3
 from UserDict import UserDict # XXX: is this what we want?
 
 import tiddlywebplugins.tagdex as tagdex
+import tiddlywebplugins.tagdex.database as database
 
 
 def setup_module(module):
@@ -11,7 +12,7 @@ def setup_module(module):
     module.STORE = UserDict()
     module.STORE.environ = { 'tiddlyweb.config': CONFIG }
     # reset database
-    module.DB = tagdex._db_path(module.CONFIG)
+    module.DB = database._db_path(module.CONFIG)
     try:
         os.remove(module.DB)
     except OSError:

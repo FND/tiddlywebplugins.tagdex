@@ -20,14 +20,14 @@ def tiddler_put_hook(store, tiddler):
     with sqlite3.connect(db) as conn: # TODO: reuse connections for efficiency?
         cur = conn.cursor()
 
-        for tag in tiddler.tags:
-            # fetch or create tiddler
-            tid_id = cur.execute('SELECT COUNT(*) FROM tiddlers WHERE title = ?',
-                    (tiddler.title,)).fetchone()[0]
-            if not tid_id:
-                tid_id = cur.execute('INSERT INTO tiddlers VALUES (?, ?, ?)',
-                    (None, tiddler.title, tiddler.bag)).lastrowid
+        # fetch or create tiddler
+        tid_id = cur.execute('SELECT COUNT(*) FROM tiddlers WHERE title = ?',
+                (tiddler.title,)).fetchone()[0]
+        if not tid_id:
+            tid_id = cur.execute('INSERT INTO tiddlers VALUES (?, ?, ?)',
+                (None, tiddler.title, tiddler.bag)).lastrowid
 
+        for tag in tiddler.tags:
             # fetch or create tag
             tag_id = cur.execute('SELECT COUNT(*) FROM tags WHERE name = ?',
                     (tag,)).fetchone()[0]

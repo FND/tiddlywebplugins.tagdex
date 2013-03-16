@@ -63,6 +63,13 @@ def test_tiddler_collection():
     assert response['content-type'] == 'text/plain'
     assert content == 'alpha/HelloWorld\nbravo/HelloWorld\nalpha/Lipsum\n'
 
+    response, content = http.request('http://example.org:8001/tags/foo,baz',
+            method='GET', headers={ 'Accept': 'text/plain' })
+
+    assert response.status == 200
+    assert response['content-type'] == 'text/plain'
+    assert content == 'alpha/HelloWorld\nbravo/HelloWorld\nalpha/Lipsum\n'
+
 
 def _put_tiddler(title, bag, tags, body):
     uri = 'http://example.org:8001/bags/%s/tiddlers/%s' % (bag, title)

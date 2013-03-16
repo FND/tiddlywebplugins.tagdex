@@ -44,7 +44,7 @@ tags: bar baz
     """.strip())
 
 
-def test_web_collection():
+def test_tag_collection():
     http = httplib2.Http()
     response, content = http.request('http://example.org:8001/tags',
             method='GET', headers={ 'Accept': 'text/plain' })
@@ -52,6 +52,24 @@ def test_web_collection():
     assert response.status == 200
     assert response['content-type'] == 'text/plain'
     assert content == 'foo\nbar\nbaz\n'
+
+
+def test_tiddler_collection():
+    http = httplib2.Http()
+
+    response, content = http.request('http://example.org:8001/tags/foo',
+            method='GET', headers={ 'Accept': 'text/plain' })
+
+    assert response.status == 200
+    assert response['content-type'] == 'text/plain'
+    assert content == 'alpha/HelloWorld\n'
+
+    response, content = http.request('http://example.org:8001/tags/bar',
+            method='GET', headers={ 'Accept': 'text/plain' })
+
+    assert response.status == 200
+    assert response['content-type'] == 'text/plain'
+    assert content == 'alpha/HelloWorld\nalpha/Lipsum\n'
 
 
 def _put_tiddler(title, bag, body):

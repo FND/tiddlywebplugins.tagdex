@@ -19,4 +19,5 @@ def init(config):
 
     if 'selector' in config: # system plugin
         config['selector'].add('/tags[.{format}]', GET=web.get_tags)
-        #config['selector'].add('/tags/{filter:segment}[.{format}]', GET=)
+        config['selector'].add('/tags/{filter:segment}[.{format}]',
+                GET=web.get_tiddlers)

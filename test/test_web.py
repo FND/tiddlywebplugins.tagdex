@@ -28,11 +28,12 @@ def setup_module(module):
     except OSError:
         pass
 
-    bag = Bag('alpha')
-    store.put(bag)
+    store.put(Bag('alpha'))
+    store.put(Bag('bravo'))
 
-    _put_tiddler('HelloWorld', bag.name, ['foo', 'bar'], 'lorem ipsum')
-    _put_tiddler('Lipsum', bag.name, ['bar', 'baz'], '...')
+    _put_tiddler('HelloWorld', 'alpha', ['foo', 'bar'], 'lorem ipsum')
+    _put_tiddler('HelloWorld', 'bravo', ['foo', 'bar'], 'lorem ipsum')
+    _put_tiddler('Lipsum', 'alpha', ['bar', 'baz'], '...')
 
 
 def test_tag_collection():
@@ -53,14 +54,14 @@ def test_tiddler_collection():
 
     assert response.status == 200
     assert response['content-type'] == 'text/plain'
-    assert content == 'alpha/HelloWorld\n'
+    assert content == 'alpha/HelloWorld\nbravo/HelloWorld\n'
 
     response, content = http.request('http://example.org:8001/tags/bar',
             method='GET', headers={ 'Accept': 'text/plain' })
 
     assert response.status == 200
     assert response['content-type'] == 'text/plain'
-    assert content == 'alpha/HelloWorld\nalpha/Lipsum\n'
+    assert content == 'alpha/HelloWorld\nbravo/HelloWorld\nalpha/Lipsum\n'
 
 
 def _put_tiddler(title, bag, tags, body):

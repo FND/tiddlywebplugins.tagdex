@@ -31,17 +31,8 @@ def setup_module(module):
     bag = Bag('alpha')
     store.put(bag)
 
-    _put_tiddler('HelloWorld', bag.name, """
-tags: foo bar
-
-lorem ipsum
-dolor sit amet
-    """.strip())
-    _put_tiddler('Lipsum', bag.name, """
-tags: bar baz
-
-...
-    """.strip())
+    _put_tiddler('HelloWorld', bag.name, ['foo', 'bar'], 'lorem ipsum')
+    _put_tiddler('Lipsum', bag.name, ['bar', 'baz'], '...')
 
 
 def test_tag_collection():
@@ -72,11 +63,13 @@ def test_tiddler_collection():
     assert content == 'alpha/HelloWorld\nalpha/Lipsum\n'
 
 
-def _put_tiddler(title, bag, body):
-    http = httplib2.Http()
+def _put_tiddler(title, bag, tags, body):
     uri = 'http://example.org:8001/bags/%s/tiddlers/%s' % (bag, title)
+    rep = 'tags: %s\n\n%s' % (" ".join(tags), body)
+
+    http = httplib2.Http()
     response, content = http.request(uri, method='PUT',
-            headers={ 'Content-Type': 'text/plain' }, body=body)
+            headers={ 'Content-Type': 'text/plain' }, body=rep)
 
     if not response.status == 204:
         raise RuntimeError(content)

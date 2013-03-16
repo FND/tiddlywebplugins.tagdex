@@ -4,7 +4,7 @@ import sqlite3
 
 from tiddlyweb.store import HOOKS
 
-from . import database, hooks
+from . import database, hooks, web
 
 
 def init(config):
@@ -16,3 +16,7 @@ def init(config):
             database.initialize(cur)
         except sqlite3.OperationalError: # already exists -- XXX: too magical?
             pass
+
+    if 'selector' in config: # system plugin
+        config['selector'].add('/tags[.{format}]', GET=web.get_tags)
+        #config['selector'].add('/tags/{filter:segment}[.{format}]', GET=)

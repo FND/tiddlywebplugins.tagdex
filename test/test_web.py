@@ -77,7 +77,7 @@ def test_tiddler_collection():
     assert '<a href="/bags/bravo/tiddlers/HelloWorld">HelloWorld</a>' in content
     assert '<a href="/bags/alpha/tiddlers/Lipsum">Lipsum</a>' in content
 
-    response, content = http.request('http://example.org:8001/tags/bar',
+    response, content = http.request('http://example.org:8001/tags/foo,bar,baz',
             method='GET', headers={ 'Accept': 'application/json' })
 
     assert response.status == 200

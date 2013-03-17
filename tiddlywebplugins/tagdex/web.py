@@ -25,7 +25,7 @@ def get_tiddlers(environ, start_response):
 
     with database.Connection(environ['tiddlyweb.config']) as (conn, cur):
         sql = """
-        SELECT bag, title FROM tiddlers
+        SELECT DISTINCT bag, title FROM tiddlers
         JOIN tiddler_tags ON tiddler_tags.tiddler_id=tiddlers.id
         JOIN tags ON tiddler_tags.tag_id=tags.id
         WHERE %s

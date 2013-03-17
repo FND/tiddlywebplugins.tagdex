@@ -1,4 +1,5 @@
 import os
+import json
 
 import httplib2
 import wsgi_intercept
@@ -50,30 +51,48 @@ def test_tiddler_collection():
     http = httplib2.Http()
 
     response, content = http.request('http://example.org:8001/tags/foo',
-            method='GET', headers={ 'Accept': 'text/plain' })
+            method='GET', headers={ 'Accept': 'text/html' })
 
     assert response.status == 200
-    assert response['content-type'] == 'text/plain'
-    assert content == 'alpha/HelloWorld\nbravo/HelloWorld\n'
+    assert response['content-type'] == 'text/html; charset=UTF-8'
+    assert '<a href="/bags/alpha/tiddlers/HelloWorld">HelloWorld</a>' in content
+    assert '<a href="/bags/bravo/tiddlers/HelloWorld">HelloWorld</a>' in content
+    assert not 'Lipsum' in content
 
     response, content = http.request('http://example.org:8001/tags/bar',
-            method='GET', headers={ 'Accept': 'text/plain' })
+            method='GET', headers={ 'Accept': 'text/html' })
 
     assert response.status == 200
-    assert response['content-type'] == 'text/plain'
-    assert content == 'alpha/HelloWorld\nbravo/HelloWorld\nalpha/Lipsum\n'
+    assert response['content-type'] == 'text/html; charset=UTF-8'
+    assert '<a href="/bags/alpha/tiddlers/HelloWorld">HelloWorld</a>' in content
+    assert '<a href="/bags/bravo/tiddlers/HelloWorld">HelloWorld</a>' in content
+    assert '<a href="/bags/alpha/tiddlers/Lipsum">Lipsum</a>' in content
 
     response, content = http.request('http://example.org:8001/tags/foo,baz',
-            method='GET', headers={ 'Accept': 'text/plain' })
+            method='GET', headers={ 'Accept': 'text/html' })
 
     assert response.status == 200
-    assert response['content-type'] == 'text/plain'
-    assert content == 'alpha/HelloWorld\nbravo/HelloWorld\nalpha/Lipsum\n'
+    assert response['content-type'] == 'text/html; charset=UTF-8'
+    assert '<a href="/bags/alpha/tiddlers/HelloWorld">HelloWorld</a>' in content
+    assert '<a href="/bags/bravo/tiddlers/HelloWorld">HelloWorld</a>' in content
+    assert '<a href="/bags/alpha/tiddlers/Lipsum">Lipsum</a>' in content
+
+    response, content = http.request('http://example.org:8001/tags/bar',
+            method='GET', headers={ 'Accept': 'application/json' })
+
+    assert response.status == 200
+    assert response['content-type'] == 'application/json; charset=UTF-8'
+    data = json.loads(content)
+    ids = ['%s/%s' % (tid['bag'], tid['title']) for tid in data]
+    assert len(data) == 3
+    assert 'alpha/HelloWorld' in ids
+    assert 'bravo/HelloWorld' in ids
+    assert 'alpha/Lipsum' in ids
 
 
 def _put_tiddler(title, bag, tags, body):
     uri = 'http://example.org:8001/bags/%s/tiddlers/%s' % (bag, title)
-    rep = 'tags: %s\n\n%s' % (" ".join(tags), body)
+    rep = 'tags: %s\n\n%s' % (' '.join(tags), body)
 
     http = httplib2.Http()
     response, content = http.request(uri, method='PUT',

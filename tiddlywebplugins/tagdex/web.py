@@ -2,6 +2,9 @@ from __future__ import absolute_import, with_statement
 
 import csv
 
+from tiddlyweb.model.tiddler import Tiddler
+from tiddlyweb.model.collections import Tiddlers
+from tiddlyweb.web.sendtiddlers import send_tiddlers
 from tiddlyweb.web.util import get_route_value
 
 from . import database
@@ -34,8 +37,11 @@ def get_tiddlers(environ, start_response):
             sql = sql % 'tags.name IN (%s)'
             sql = sql % ', '.join('?' * len(tags))
             params = tags
-        tids = cur.execute(sql, params).fetchall()
-        # TODO: stream generator from the database?
 
-    start_response('200 OK', [('Content-Type', 'text/plain')])
-    return ('%s/%s\n' % (bag, title) for (bag, title) in tids) # TODO: paging
+        # TODO: stream generator from the database?
+        tiddlers = Tiddlers()
+        for tid in cur.execute(sql, params).fetchall():
+            tiddler = Tiddler(tid[1], tid[0])
+            tiddlers.add(tiddler)
+
+    return send_tiddlers(environ, start_response, tiddlers)

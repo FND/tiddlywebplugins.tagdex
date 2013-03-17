@@ -1,5 +1,3 @@
-from __future__ import absolute_import, with_statement
-
 import sqlite3
 
 from tiddlyweb.store import HOOKS

@@ -31,12 +31,6 @@ META = {
     }
 }
 
-# legacy dependencies
-try:
-    import json
-except ImportError:
-    META['install_requires'].append('simplejson')
-
 
 if __name__ == '__main__':
     setup(**META)

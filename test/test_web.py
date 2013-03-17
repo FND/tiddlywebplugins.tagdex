@@ -1,5 +1,8 @@
 import os
-import json
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 import httplib2
 import wsgi_intercept

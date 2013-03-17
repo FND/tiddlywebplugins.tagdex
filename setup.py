@@ -8,7 +8,9 @@ VERSION = '0.1.0'
 AUTHOR = 'FND'
 LICENSE = 'BSD'
 
-DESC = open(os.path.join(os.path.dirname(__file__), 'README')).read()
+DESC = os.path.join(os.path.dirname(__file__), 'README')
+DESC = ''.join(line for line in open(DESC)
+        if not line.startswith('[![build status](http')) # XXX: fugly hack
 
 META = {
     'name': 'tiddlywebplugins.tagdex',

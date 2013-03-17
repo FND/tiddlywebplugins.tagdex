@@ -1,4 +1,5 @@
 tagdex
+[![build status](https://secure.travis-ci.org/FND/tiddlywebplugins.tagdex.png)](http://travis-ci.org/FND/tiddlywebplugins.tagdex)
 
 TiddlyWeb indexer for tag-based tiddler retrieval
 

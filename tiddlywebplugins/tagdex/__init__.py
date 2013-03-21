@@ -1,8 +1,9 @@
 import sqlite3
 
 from tiddlyweb.store import HOOKS
+from tiddlyweb.manage import make_command
 
-from . import database, hooks, web
+from . import database, hooks, commands, web
 
 
 def init(config):
@@ -19,3 +20,14 @@ def init(config):
         config['selector'].add('/tags[.{format}]', GET=web.get_tags)
         config['selector'].add('/tags/{tags:segment}[.{format}]',
                 GET=web.get_tiddlers)
+
+    @make_command() # XXX: does not belong here, but necessary for `config`!?
+    def tags(args):
+        """
+        Display all tags or, if arguments are supplied, tagged tiddlers
+        """
+        if len(args) == 0:
+            print '\n'.join(tag for tag in commands.get_tags(config))
+        else:
+            print '\n'.join('%s/%s' % (tiddler.bag, tiddler.title) for tiddler
+                    in commands.get_tiddlers(config, args))

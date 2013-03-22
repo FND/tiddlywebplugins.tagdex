@@ -28,7 +28,7 @@ def get_tiddlers(config, tags):
             params = tags
 
         # TODO: stream generator from the database?
-        tiddlers = Tiddlers()
+        tiddlers = Tiddlers() # XXX: not required for non-web use
         for tid in cur.execute(sql, params).fetchall():
             tiddler = Tiddler(tid[1], tid[0])
             tiddlers.add(tiddler)

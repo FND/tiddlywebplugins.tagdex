@@ -73,25 +73,25 @@ def test_tags_and_tagged():
     cmd(['foo'])
     sys.stdout.pos = 0
     stdout = sys.stdout.read()
-    assert stdout == 'bar\n----\nalpha/HelloWorld\nbravo/HelloWorld\n'
+    assert stdout == 'tag: bar\ntiddler: alpha/HelloWorld\ntiddler: bravo/HelloWorld\n'
 
     sys.stdout.truncate(0) # reset
 
     cmd(['bar'])
     sys.stdout.pos = 0
     stdout = sys.stdout.read()
-    assert stdout == 'foo\nbaz\n----\nalpha/HelloWorld\nbravo/HelloWorld\nalpha/Lipsum\n'
+    assert stdout == 'tag: foo\ntag: baz\ntiddler: alpha/HelloWorld\ntiddler: bravo/HelloWorld\ntiddler: alpha/Lipsum\n'
 
     sys.stdout.truncate(0) # reset
 
     cmd(['foo', 'baz'])
     sys.stdout.pos = 0
     stdout = sys.stdout.read()
-    assert stdout == 'bar\n----\nalpha/HelloWorld\nbravo/HelloWorld\nalpha/Lipsum\n'
+    assert stdout == 'tag: bar\ntiddler: alpha/HelloWorld\ntiddler: bravo/HelloWorld\ntiddler: alpha/Lipsum\n'
 
     sys.stdout.truncate(0) # reset
 
     cmd(['foo', 'bar', 'baz'])
     sys.stdout.pos = 0
     stdout = sys.stdout.read()
-    assert stdout == 'alpha/HelloWorld\nbravo/HelloWorld\nalpha/Lipsum\n'
+    assert stdout == 'tiddler: alpha/HelloWorld\ntiddler: bravo/HelloWorld\ntiddler: alpha/Lipsum\n'

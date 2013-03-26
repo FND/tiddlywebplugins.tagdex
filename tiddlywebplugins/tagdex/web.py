@@ -28,11 +28,11 @@ def get_tags(environ, start_response):
             tags_by_bag[bag] = tags_by_bag.get(bag) or []
             tags_by_bag[bag].append(tag)
 
-    results = []
+    results = set()
     for bag, tags in tags_by_bag.items():
         try:
             check_bag_constraint(environ, Bag(bag), 'read')
-            results = results + [tag for tag in tags if tag not in results] # XXX: inefficient; use sets
+            results.update(set(tags))
         except PermissionsError:
             pass
 

@@ -50,7 +50,11 @@ def test_tag_collection():
 
     assert response.status == 200
     assert response['content-type'] == 'text/plain'
-    assert content == 'foo\nbar\nbaz\n'
+    lines = content.splitlines()
+    assert len(lines) == 3
+    assert 'foo' in lines
+    assert 'bar' in lines
+    assert 'baz' in lines
 
 
 def test_tiddler_collection():
@@ -102,7 +106,11 @@ def test_permission_handling():
     response, content = http.request('http://example.org:8001/tags',
             method='GET', headers={ 'Accept': 'text/plain' })
 
-    assert content == 'foo\nbar\nbaz\n'
+    lines = content.splitlines()
+    assert len(lines) == 3
+    assert 'foo' in lines
+    assert 'bar' in lines
+    assert 'baz' in lines
     assert 'secret' not in content
 
     # ensure a single readable tiddler suffices
@@ -111,7 +119,12 @@ def test_permission_handling():
     response, content = http.request('http://example.org:8001/tags',
             method='GET', headers={ 'Accept': 'text/plain' })
 
-    assert content == 'foo\nbar\nbaz\nsecret\n'
+    lines = content.splitlines()
+    assert len(lines) == 4
+    assert 'foo' in lines
+    assert 'bar' in lines
+    assert 'baz' in lines
+    assert 'secret' in content
 
     response, content = http.request('http://example.org:8001/tags/foo,bar,baz',
             method='GET', headers={ 'Accept': 'application/json' })

@@ -73,21 +73,21 @@ def test_tags_and_tagged():
     cmd(['foo'])
     sys.stdout.pos = 0
     stdout = sys.stdout.read()
-    assert stdout == 'alpha/HelloWorld\nbravo/HelloWorld\n'
+    assert stdout == 'bar\n----\nalpha/HelloWorld\nbravo/HelloWorld\n'
 
     sys.stdout.truncate(0) # reset
 
     cmd(['bar'])
     sys.stdout.pos = 0
     stdout = sys.stdout.read()
-    assert stdout == 'alpha/HelloWorld\nbravo/HelloWorld\nalpha/Lipsum\n'
+    assert stdout == 'foo\nbaz\n----\nalpha/HelloWorld\nbravo/HelloWorld\nalpha/Lipsum\n'
 
     sys.stdout.truncate(0) # reset
 
     cmd(['foo', 'baz'])
     sys.stdout.pos = 0
     stdout = sys.stdout.read()
-    assert stdout == 'alpha/HelloWorld\nbravo/HelloWorld\nalpha/Lipsum\n'
+    assert stdout == 'bar\n----\nalpha/HelloWorld\nbravo/HelloWorld\nalpha/Lipsum\n'
 
     sys.stdout.truncate(0) # reset
 

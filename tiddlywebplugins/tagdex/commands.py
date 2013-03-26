@@ -14,7 +14,7 @@ def get_tags(config):
 def get_tiddlers(config, tags):
     with database.Connection(config) as (conn, cur):
         sql = """
-        SELECT DISTINCT bag, title FROM tiddlers
+        SELECT DISTINCT tiddlers.id, bag, title FROM tiddlers
         JOIN tiddler_tags ON tiddler_tags.tiddler_id=tiddlers.id
         JOIN tags ON tiddler_tags.tag_id=tags.id
         WHERE %s
@@ -29,8 +29,23 @@ def get_tiddlers(config, tags):
 
         # TODO: stream generator from the database?
         tiddlers = Tiddlers() # XXX: not required for non-web use
-        for tid in cur.execute(sql, params).fetchall():
-            tiddler = Tiddler(tid[1], tid[0])
+        tiddler_ids = []
+        for tid in cur.execute(sql, params):
+            tiddler = Tiddler(tid[2], tid[1])
             tiddlers.add(tiddler)
+            tiddler_ids.append(tid[0])
 
-    return tiddlers
+        sql = """
+        SELECT name FROM tags
+        JOIN tiddler_tags ON tiddler_tags.tag_id=tags.id
+        JOIN tiddlers ON tiddler_tags.tiddler_id=tiddlers.id
+        WHERE tiddlers.id IN (%s)
+        """
+        sql = sql % ', '.join('?' * len(tiddler_ids))
+        new_tags = []
+        for tag in cur.execute(sql, tiddler_ids):
+            tag = tag[0]
+            if not (tag in tags or tag in new_tags):
+                new_tags.append(tag)
+
+    return new_tags, tiddlers

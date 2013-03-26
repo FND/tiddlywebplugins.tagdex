@@ -29,5 +29,9 @@ def init(config):
         if len(args) == 0:
             print '\n'.join(tag for tag in commands.get_tags(config))
         else:
+            tags, tiddlers = commands.get_tiddlers(config, args)
+            if len(tags):
+                print '\n'.join(tags)
+                print '----'
             print '\n'.join('%s/%s' % (tiddler.bag, tiddler.title) for tiddler
-                    in commands.get_tiddlers(config, args))
+                    in tiddlers)

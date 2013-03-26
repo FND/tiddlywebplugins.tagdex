@@ -3,17 +3,15 @@ import csv
 from tiddlyweb.model.bag import Bag
 from tiddlyweb.model.tiddler import Tiddler
 from tiddlyweb.model.collections import Tiddlers
+from tiddlyweb.model.policy import PermissionsError
 from tiddlyweb.web.sendtiddlers import send_tiddlers
-from tiddlyweb.web.util import get_route_value
-
-from tiddlywebplugins.utils import get_store
+from tiddlyweb.web.util import get_route_value, check_bag_constraint
 
 from . import database
 
 
 def get_tags(environ, start_response):
     config = environ['tiddlyweb.config']
-    store = get_store(config)
     user = environ['tiddlyweb.usersign']['name'] # XXX: always present?
 
     start_response('200 OK', [('Content-Type', 'text/plain')])
@@ -32,16 +30,17 @@ def get_tags(environ, start_response):
 
     results = []
     for bag, tags in tags_by_bag.items():
-        bag = store.get(Bag(bag))
-        if not bag.policy.read or user in bag.policy.read: # XXX: duplicates existing core logic!?
-            results = results + [tag for tag in tags if tag not in results] # XXX: inefficient
+        try:
+            check_bag_constraint(environ, Bag(bag), 'read')
+            results = results + [tag for tag in tags if tag not in results] # XXX: inefficient; use sets
+        except PermissionsError:
+            pass
 
     return ('%s\n' % tag for tag in results) # TODO: paging
 
 
 def get_tiddlers(environ, start_response):
     config = environ['tiddlyweb.config']
-    store = get_store(config)
     user = environ['tiddlyweb.usersign']['name'] # XXX: always present?
 
     tags = get_route_value(environ, 'tags')
@@ -63,10 +62,12 @@ def get_tiddlers(environ, start_response):
 
     tiddlers = Tiddlers()
     for bag, titles in titles_by_bag.items():
-        bag = store.get(Bag(bag))
-        if not bag.policy.read or user in bag.policy.read: # XXX: duplicates existing core logic!?
+        try:
+            check_bag_constraint(environ, Bag(bag), 'read')
             for title in titles:
-                tiddler = Tiddler(title, bag.name)
+                tiddler = Tiddler(title, bag)
                 tiddlers.add(tiddler) # XXX: does this discard dupes?
+        except PermissionsError:
+            pass
 
     return send_tiddlers(environ, start_response, tiddlers)

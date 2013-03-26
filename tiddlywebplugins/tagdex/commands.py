@@ -11,7 +11,7 @@ def get_tags(config):
     return tags
 
 
-def get_tiddlers(config, tags):
+def get_tiddlers(config, tags): # XXX: badly named, doing too much
     with database.Connection(config) as (conn, cur):
         sql = """
         SELECT DISTINCT tiddlers.id, bag, title FROM tiddlers

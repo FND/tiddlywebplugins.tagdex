@@ -60,14 +60,18 @@ def get_tiddlers(environ, start_response):
             titles_by_bag[bag] = titles_by_bag.get(bag) or []
             titles_by_bag[bag].append(tag)
 
-    tiddlers = Tiddlers()
+    tids = set()
     for bag, titles in titles_by_bag.items():
         try:
             check_bag_constraint(environ, Bag(bag), 'read')
             for title in titles:
-                tiddler = Tiddler(title, bag)
-                tiddlers.add(tiddler) # XXX: does this discard dupes?
+                tids.add((bag, title))
         except PermissionsError:
             pass
+
+    tiddlers = Tiddlers()
+    for bag, title in tids:
+        tiddler = Tiddler(title, bag)
+        tiddlers.add(tiddler)
 
     return send_tiddlers(environ, start_response, tiddlers)

@@ -6,9 +6,8 @@ from . import database
 
 def get_tags(config):
     with database.Connection(config) as (conn, cur):
-        tags = [row[0] for row in cur.execute('SELECT name FROM tags')]
-        # TODO: stream generator from the database?
-    return tags
+        for row in cur.execute('SELECT name FROM tags'):
+            yield row[0]
 
 
 def get_tiddlers(config, tags): # XXX: badly named, doing too much

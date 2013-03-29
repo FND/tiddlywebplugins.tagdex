@@ -1,4 +1,4 @@
-.PHONY: release dist test clean
+.PHONY: release dist coverage test clean
 
 release: clean test
 	git diff --exit-code # ensure there are no uncommitted changes
@@ -13,6 +13,19 @@ release: clean test
 dist: clean test
 	rm -r dist || true
 	python setup.py sdist
+
+coverage: clean
+	# option #1: figleaf
+	find . test -name "*.py" | grep -v venv > coverage.lst
+	figleaf `which py.test` -s test
+	figleaf2html -f coverage.lst
+	# option #2: coverage
+	coverage run `which py.test` -s test
+	coverage html --omit="venv/*"
+	# reports
+	coverage report --omit="venv/*"
+	@echo "[INFO] additional reports in \`html/index.html\` (figleaf) and" \
+			"\`htmlcov/index.html\` (coverage)"
 
 test: clean
 	py.test -s --tb=short test

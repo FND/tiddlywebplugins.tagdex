@@ -30,12 +30,12 @@ def get_readable_tags(environ):
         """
         tags_by_bag = defaultdict(lambda: set())
         for bag, tag in cur.execute(sql):
-            if _readable(environ, bag):
-                tags_by_bag[bag].add(tag)
+            tags_by_bag[bag].add(tag)
 
     results = set()
     for bag, tags in tags_by_bag.items():
-        results.update(tags)
+        if _readable(environ, bag):
+            results.update(tags)
 
     return results
 
@@ -82,12 +82,12 @@ def get_readable_tagged_tiddlers(environ, tags):
 
         titles_by_bag = defaultdict(lambda: set())
         for bag, title in cur.execute(sql, tags):
-            if _readable(environ, bag):
-                titles_by_bag[bag].add(title)
+            titles_by_bag[bag].add(title)
 
     for bag, titles in titles_by_bag.items():
-        for title in titles:
-            yield Tiddler(title, bag)
+        if _readable(environ, bag):
+            for title in titles:
+                yield Tiddler(title, bag)
 
 
 def get_all_related_tags(config, tags, tiddler_ids):

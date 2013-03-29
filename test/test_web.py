@@ -47,7 +47,6 @@ def test_tag_collection():
 
     response, content = http.request('http://example.org:8001/tags',
             method='GET', headers={ 'Accept': 'text/plain' })
-
     assert response.status == 200
     assert response['content-type'] == 'text/plain'
     lines = content.splitlines()
@@ -62,7 +61,6 @@ def test_tiddler_collection():
 
     response, content = http.request('http://example.org:8001/tags/foo',
             method='GET', headers={ 'Accept': 'text/html' })
-
     assert response.status == 200
     assert response['content-type'] == 'text/html; charset=UTF-8'
     assert '<a href="/bags/alpha/tiddlers/HelloWorld">HelloWorld</a>' in content
@@ -71,7 +69,6 @@ def test_tiddler_collection():
 
     response, content = http.request('http://example.org:8001/tags/bar',
             method='GET', headers={ 'Accept': 'text/html' })
-
     assert response.status == 200
     assert response['content-type'] == 'text/html; charset=UTF-8'
     assert '<a href="/bags/alpha/tiddlers/HelloWorld">HelloWorld</a>' in content
@@ -80,7 +77,6 @@ def test_tiddler_collection():
 
     response, content = http.request('http://example.org:8001/tags/foo,baz',
             method='GET', headers={ 'Accept': 'text/html' })
-
     assert response.status == 200
     assert response['content-type'] == 'text/html; charset=UTF-8'
     assert '<a href="/bags/alpha/tiddlers/HelloWorld">HelloWorld</a>' in content
@@ -89,7 +85,6 @@ def test_tiddler_collection():
 
     response, content = http.request('http://example.org:8001/tags/foo,bar,baz',
             method='GET', headers={ 'Accept': 'application/json' })
-
     assert response.status == 200
     assert response['content-type'] == 'application/json; charset=UTF-8'
     data = json.loads(content)
@@ -105,7 +100,6 @@ def test_permission_handling():
 
     response, content = http.request('http://example.org:8001/tags',
             method='GET', headers={ 'Accept': 'text/plain' })
-
     lines = content.splitlines()
     assert len(lines) == 3
     assert 'foo' in lines
@@ -118,7 +112,6 @@ def test_permission_handling():
 
     response, content = http.request('http://example.org:8001/tags',
             method='GET', headers={ 'Accept': 'text/plain' })
-
     lines = content.splitlines()
     assert len(lines) == 4
     assert 'foo' in lines
@@ -128,7 +121,6 @@ def test_permission_handling():
 
     response, content = http.request('http://example.org:8001/tags/foo,bar,baz',
             method='GET', headers={ 'Accept': 'application/json' })
-
     data = json.loads(content)
     ids = ['%s/%s' % (tid['bag'], tid['title']) for tid in data]
     assert len(data) == 3
@@ -142,7 +134,6 @@ def test_permission_handling():
 
     response, content = http.request('http://example.org:8001/tags/foo,bar,baz',
             method='GET', headers={ 'Accept': 'application/json' })
-
     data = json.loads(content)
     ids = ['%s/%s' % (tid['bag'], tid['title']) for tid in data]
     assert len(data) == 2
@@ -158,7 +149,6 @@ def _put_tiddler(title, bag, tags, body):
     http = httplib2.Http()
     response, content = http.request(uri, method='PUT',
             headers={ 'Content-Type': 'text/plain' }, body=rep)
-
     if not response.status == 204:
         raise RuntimeError(content)
 

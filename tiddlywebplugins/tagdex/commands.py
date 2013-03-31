@@ -6,6 +6,7 @@ from tiddlyweb.model.policy import PermissionsError
 from tiddlyweb.web.util import check_bag_constraint
 
 from . import database
+from .database import query
 
 
 def get_all_tags(config):
@@ -13,7 +14,7 @@ def get_all_tags(config):
     retrieve all tags
     """
     with database.Connection(config) as (conn, cur):
-        for row in cur.execute('SELECT name FROM tags'):
+        for row in query(cur, 'SELECT name FROM tags'):
             yield row[0]
 
 
@@ -30,7 +31,7 @@ def get_readable_tags(environ):
         """
 
         tags_by_bag = defaultdict(lambda: set())
-        for bag, tag in cur.execute(sql):
+        for bag, tag in query(cur, sql):
             tags_by_bag[bag].add(tag)
 
     results = set()
@@ -63,7 +64,7 @@ def get_all_tagged_tiddlers(config, tags):
             params = tags
 
         tiddlers = []
-        for _id, bag, title in cur.execute(sql, params):
+        for _id, bag, title in query(cur, sql, params):
             yield _id, Tiddler(title, bag) # ID included for subsequent queries
 
 
@@ -84,7 +85,7 @@ def get_readable_tagged_tiddlers(environ, tags):
         sql = sql % ', '.join('?' * len(tags))
 
         tids_by_bag = defaultdict(lambda: set())
-        for _id, bag, title in cur.execute(sql, tags):
+        for _id, bag, title in query(cur, sql, tags):
             tids_by_bag[bag].add((_id, title))
 
     for bag, tids in tids_by_bag.items():
@@ -105,7 +106,7 @@ def get_all_related_tags(config, tags, tiddler_ids):
         WHERE tiddlers.id IN (%s)
         """ % ', '.join('?' * len(tiddler_ids))
 
-        for tag in cur.execute(sql, tiddler_ids):
+        for tag in query(cur, sql, tiddler_ids):
             tag = tag[0]
             if not tag in tags:
                 yield tag
@@ -125,7 +126,7 @@ def get_readable_related_tags(environ, tags, tiddler_ids):
         """ % ', '.join('?' * len(tiddler_ids)) # XXX: DEBUG title included only for debugging
 
         tags_by_bag = defaultdict(lambda: set())
-        for tag, bag, title in cur.execute(sql, tiddler_ids):
+        for tag, bag, title in query(cur, sql, tiddler_ids):
             tags_by_bag[bag].add(tag)
 
     results = set()

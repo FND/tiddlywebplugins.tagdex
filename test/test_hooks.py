@@ -134,8 +134,8 @@ def _retrieve_all():
     with sqlite3.connect(DB) as conn:
         cur = conn.cursor()
 
-        tids = cur.execute('SELECT * FROM tiddlers').fetchall()
-        tags = cur.execute('SELECT * FROM tags').fetchall()
-        rels = cur.execute('SELECT * FROM tiddler_tags').fetchall()
+        tids = database.query(cur, 'SELECT * FROM tiddlers').fetchall()
+        tags = database.query(cur, 'SELECT * FROM tags').fetchall()
+        rels = database.query(cur, 'SELECT * FROM tiddler_tags').fetchall()
 
         return tids, tags, rels

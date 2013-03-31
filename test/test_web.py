@@ -10,6 +10,7 @@ from wsgi_intercept import httplib2_intercept
 
 from tiddlyweb.model.bag import Bag
 from tiddlyweb.model.policy import Policy
+from tiddlyweb.serializations import SerializationInterface
 from tiddlyweb.config import config
 from tiddlyweb.web.serve import load_app
 
@@ -63,36 +64,42 @@ def test_tiddler_collection():
             method='GET', headers={ 'Accept': 'text/html' })
     assert response.status == 200
     assert response['content-type'] == 'text/html; charset=UTF-8'
+    assert '<a href="/tags/bar,foo">bar</a>' in content
     assert '<a href="/bags/alpha/tiddlers/HelloWorld">HelloWorld</a>' in content
     assert '<a href="/bags/bravo/tiddlers/HelloWorld">HelloWorld</a>' in content
+    assert not 'baz' in content
+    assert not 'secret' in content
     assert not 'Lipsum' in content
 
     response, content = http.request('http://example.org:8001/tags/bar',
             method='GET', headers={ 'Accept': 'text/html' })
     assert response.status == 200
     assert response['content-type'] == 'text/html; charset=UTF-8'
+    assert '<a href="/tags/bar,foo">foo</a>' in content
+    assert '<a href="/tags/bar,baz">baz</a>' in content
     assert '<a href="/bags/alpha/tiddlers/HelloWorld">HelloWorld</a>' in content
     assert '<a href="/bags/bravo/tiddlers/HelloWorld">HelloWorld</a>' in content
     assert '<a href="/bags/alpha/tiddlers/Lipsum">Lipsum</a>' in content
+    assert not 'secret' in content
 
     response, content = http.request('http://example.org:8001/tags/foo,baz',
             method='GET', headers={ 'Accept': 'text/html' })
     assert response.status == 200
     assert response['content-type'] == 'text/html; charset=UTF-8'
+    assert '<a href="/tags/bar,baz,foo">bar</a>' in content
     assert '<a href="/bags/alpha/tiddlers/HelloWorld">HelloWorld</a>' in content
     assert '<a href="/bags/bravo/tiddlers/HelloWorld">HelloWorld</a>' in content
     assert '<a href="/bags/alpha/tiddlers/Lipsum">Lipsum</a>' in content
+    assert not 'secret' in content
 
     response, content = http.request('http://example.org:8001/tags/foo,bar,baz',
-            method='GET', headers={ 'Accept': 'application/json' })
+            method='GET', headers={ 'Accept': 'text/html' })
     assert response.status == 200
-    assert response['content-type'] == 'application/json; charset=UTF-8'
-    data = json.loads(content)
-    ids = ['%s/%s' % (tid['bag'], tid['title']) for tid in data]
-    assert len(data) == 3
-    assert 'alpha/HelloWorld' in ids
-    assert 'bravo/HelloWorld' in ids
-    assert 'alpha/Lipsum' in ids
+    assert response['content-type'] == 'text/html; charset=UTF-8'
+    assert not '/tags/' in content
+    assert '<a href="/bags/alpha/tiddlers/HelloWorld">HelloWorld</a>' in content
+    assert '<a href="/bags/bravo/tiddlers/HelloWorld">HelloWorld</a>' in content
+    assert '<a href="/bags/alpha/tiddlers/Lipsum">Lipsum</a>' in content
 
 
 def test_permission_handling():
@@ -120,13 +127,11 @@ def test_permission_handling():
     assert 'secret' in content
 
     response, content = http.request('http://example.org:8001/tags/foo,bar,baz',
-            method='GET', headers={ 'Accept': 'application/json' })
-    data = json.loads(content)
-    ids = ['%s/%s' % (tid['bag'], tid['title']) for tid in data]
-    assert len(data) == 3
-    assert 'alpha/HelloWorld' in ids
-    assert 'bravo/HelloWorld' in ids
-    assert 'alpha/Lipsum' in ids
+            method='GET', headers={ 'Accept': 'text/html' })
+    assert not '/tags/' in content
+    assert '<a href="/bags/alpha/tiddlers/HelloWorld">HelloWorld</a>' in content
+    assert '<a href="/bags/bravo/tiddlers/HelloWorld">HelloWorld</a>' in content
+    assert '<a href="/bags/alpha/tiddlers/Lipsum">Lipsum</a>' in content
 
     bag = Bag('bravo')
     bag.policy = Policy(read=['bob'])
@@ -134,17 +139,16 @@ def test_permission_handling():
 
     response, content = http.request('http://example.org:8001/tags/foo,bar,baz',
             method='GET', headers={ 'Accept': 'application/json' })
-    data = json.loads(content)
-    ids = ['%s/%s' % (tid['bag'], tid['title']) for tid in data]
-    assert len(data) == 2
-    assert 'alpha/HelloWorld' in ids
-    assert 'bravo/HelloWorld' not in ids
-    assert 'alpha/Lipsum' in ids
+    assert not '/tags/' in content
+    assert '<a href="/bags/alpha/tiddlers/HelloWorld">HelloWorld</a>' in content
+    assert '<a href="/bags/alpha/tiddlers/Lipsum">Lipsum</a>' in content
+    assert not '/bags/bravo/tiddlers/HelloWorld' in content
 
 
 def _put_tiddler(title, bag, tags, body):
     uri = 'http://example.org:8001/bags/%s/tiddlers/%s' % (bag, title)
-    rep = 'tags: %s\n\n%s' % (' '.join(tags), body)
+    tags = SerializationInterface().tags_as(tags) # XXX: hacky and obsolete with latest TiddlyWeb
+    rep = 'tags: %s\n\n%s' % (tags, body)
 
     http = httplib2.Http()
     response, content = http.request(uri, method='PUT',

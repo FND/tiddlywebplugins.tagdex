@@ -1,5 +1,7 @@
 import csv
 
+from StringIO import StringIO
+
 from tiddlyweb.model.bag import Bag
 from tiddlyweb.model.tiddler import Tiddler
 from tiddlyweb.model.collections import Tiddlers
@@ -14,14 +16,34 @@ def get_tags(environ, start_response):
     return ('%s\n' % tag for tag in commands.get_readable_tags(environ))
 
 
-def get_tiddlers(environ, start_response):
+def get_tiddlers(environ, start_response): # TODO: rename
     config = environ['tiddlyweb.config']
 
     tags = get_route_value(environ, 'tags')
     tags = csv.reader([tags]).next()
 
-    tiddlers = Tiddlers()
-    for tiddler in commands.get_readable_tagged_tiddlers(environ, tags):
-        tiddlers.add(tiddler)
+    start_response('200 OK', [('Content-Type', 'text/html; charset=UTF-8')])
 
-    return send_tiddlers(environ, start_response, tiddlers)
+    tiddlers = []
+    tiddler_ids = []
+    for _id, tiddler in commands.get_readable_tagged_tiddlers(environ, tags): # XXX: smell
+        tiddlers.append(tiddler)
+        tiddler_ids.append(_id)
+
+    yield '<h2>Related Tags</h2>\n'
+    for tag in commands.get_readable_related_tags(environ, tags, tiddler_ids):
+        params = sorted(tags + [tag]) # sorting ensures consistency
+
+        csv_out = StringIO()
+        writer = csv.writer(csv_out)
+        writer.writerow(params)
+        csv_out.seek(0)
+        params = csv_out.read().rstrip()
+
+        uri = '/tags/%s' % params # XXX: server prefix & encoding
+        yield '<a href="%s">%s</a>\n' % (uri, tag)
+
+    yield '<h2>Tiddlers</h2>\n'
+    for tiddler in tiddlers:
+        uri = '/bags/%s/tiddlers/%s' % (tiddler.bag, tiddler.title) # XXX: server prefix & encoding
+        yield '<a href="%s">%s</a>\n' % (uri, tiddler.title)

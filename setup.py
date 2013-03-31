@@ -16,7 +16,7 @@ META = {
     'name': 'tiddlywebplugins.tagdex',
     'url': 'https://github.com/FND/tiddlywebplugins.tagdex',
     'version': VERSION,
-    'description': 'TiddlyWeb indexer for tag-based tiddler retrieval',
+    'description': 'TiddlyWeb indexer for faceted tag-based tiddler retrieval',
     'long_description': DESC,
     'license': LICENSE,
     'author': AUTHOR,

@@ -24,7 +24,7 @@ META = {
     'platforms': 'Posix; MacOS X; Windows',
     'include_package_data': False,
     'zip_safe': False,
-    'install_requires': ['tiddlyweb', 'tiddlywebplugins.utils'],
+    'install_requires': ['tiddlyweb>=1.4.8', 'tiddlywebplugins.utils'],
     'extras_require': {
         'testing': ['pytest', 'wsgi-intercept', 'httplib2'],
         'coverage': ['figleaf', 'coverage']

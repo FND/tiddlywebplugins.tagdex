@@ -8,9 +8,9 @@ from UserDict import UserDict # XXX: is this what we want?
 
 from wsgi_intercept import httplib2_intercept
 
+from tiddlyweb.model.tiddler import tags_list_to_string
 from tiddlyweb.model.bag import Bag
 from tiddlyweb.model.policy import Policy
-from tiddlyweb.serializations import SerializationInterface
 from tiddlyweb.config import config
 from tiddlyweb.web.serve import load_app
 
@@ -147,7 +147,7 @@ def test_permission_handling():
 
 def _put_tiddler(title, bag, tags, body):
     uri = 'http://example.org:8001/bags/%s/tiddlers/%s' % (bag, title)
-    tags = SerializationInterface().tags_as(tags) # XXX: hacky and obsolete with latest TiddlyWeb
+    tags = tags_list_to_string(tags)
     rep = 'tags: %s\n\n%s' % (tags, body)
 
     http = httplib2.Http()

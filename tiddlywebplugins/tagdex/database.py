@@ -58,7 +58,6 @@ def initialize(cursor):
     create database tables
     """
     pk = 'INTEGER PRIMARY KEY AUTOINCREMENT'
-    # TODO: use `executescript`?
     query(cursor, 'CREATE TABLE tags (id %s, name TEXT)' % pk)
     query(cursor, 'CREATE TABLE tiddlers (id %s, title TEXT, bag TEXT)' % pk)
     query(cursor, 'CREATE TABLE tiddler_tags (tiddler_id INTEGER, tag_id INTEGER)')

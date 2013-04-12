@@ -7,6 +7,7 @@ import wsgi_intercept
 from UserDict import UserDict # XXX: is this what we want?
 
 from wsgi_intercept import httplib2_intercept
+from pyquery import PyQuery as pq
 
 from tiddlyweb.model.tiddler import tags_list_to_string
 from tiddlyweb.model.bag import Bag
@@ -41,20 +42,26 @@ def setup_module(module):
     _put_tiddler('HelloWorld', 'bravo', ['foo', 'bar'], 'lorem ipsum')
     _put_tiddler('Lipsum', 'alpha', ['bar', 'baz'], '...')
     _put_tiddler('Confidential', 'charlie', ['secret'], '...')
+    _put_tiddler('1984', 'alpha', ['book', 'scifi', 'political'], 'Orwell, G.')
+    _put_tiddler('Foundation', 'alpha', ['book', 'scifi'], 'Asimov, I.')
 
 
 def test_tag_collection():
     http = httplib2.Http()
 
     response, content = http.request('http://example.org:8001/tags',
-            method='GET', headers={ 'Accept': 'text/plain' })
+            method='GET', headers={ 'Accept': 'text/html' })
     assert response.status == 200
-    assert response['content-type'] == 'text/plain'
-    lines = content.splitlines()
-    assert len(lines) == 3
-    assert 'foo' in lines
-    assert 'bar' in lines
-    assert 'baz' in lines
+    assert response['content-type'] == 'text/html; charset=UTF-8'
+    tags, tiddlers = _extract_data(content)
+    assert len(tiddlers) == 0
+    assert len(tags) == 6
+    uris = tags.values()
+    tags = tags.keys()
+    for tag in ['foo', 'bar', 'baz', 'book', 'scifi', 'political']:
+        assert tag in tags
+        assert '/tags/%s' % tag in uris
+    assert not 'secret' in tags
 
 
 def test_tiddler_collection():
@@ -107,12 +114,15 @@ def test_permission_handling():
 
     response, content = http.request('http://example.org:8001/tags',
             method='GET', headers={ 'Accept': 'text/plain' })
-    lines = content.splitlines()
-    assert len(lines) == 3
-    assert 'foo' in lines
-    assert 'bar' in lines
-    assert 'baz' in lines
-    assert 'secret' not in content
+    tags, _ = _extract_data(content)
+    assert len(tags) == 6
+    assert 'foo' in tags
+    assert 'bar' in tags
+    assert 'baz' in tags
+    assert 'book' in tags
+    assert 'scifi' in tags
+    assert 'political' in tags
+    assert not 'secret' in tags
 
     # ensure a single readable tiddler suffices
     _put_tiddler('AllEyes', 'bravo', ['secret'], '...')
@@ -120,11 +130,9 @@ def test_permission_handling():
     response, content = http.request('http://example.org:8001/tags',
             method='GET', headers={ 'Accept': 'text/plain' })
     lines = content.splitlines()
-    assert len(lines) == 4
-    assert 'foo' in lines
-    assert 'bar' in lines
-    assert 'baz' in lines
-    assert 'secret' in content
+    tags, _ = _extract_data(content)
+    assert len(tags) == 7
+    assert 'secret' in tags
 
     response, content = http.request('http://example.org:8001/tags/foo,bar,baz',
             method='GET', headers={ 'Accept': 'text/html' })
@@ -170,3 +178,23 @@ def _initialize_app(cfg):
     wsgi_intercept.add_wsgi_intercept('example.org', 8001, lambda: load_app())
 
     return config
+
+
+def _extract_data(html):
+    doc = pq(html)
+    tags = _get_section_links(doc, "#tags")
+    tiddlers = _get_section_links(doc, "#tiddlers")
+    return tags, tiddlers
+
+
+def _get_section_links(doc, section_id):
+    el = doc(section_id).next()
+    links = {}
+    while el and not el.is_("h1, h2, h3, h4, h5, h6"): # stop at next section
+        link = el if el.is_("a") else el.find("a:first")
+        if link:
+            label = link.text().strip()
+            uri = link.attr("href")
+            links[label] = uri
+        el = el.next()
+    return links

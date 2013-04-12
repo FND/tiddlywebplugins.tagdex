@@ -12,8 +12,12 @@ from . import commands, database
 
 
 def get_tags(environ, start_response):
-    start_response('200 OK', [('Content-Type', 'text/plain')])
-    return ('%s\n' % tag for tag in commands.get_readable_tags(environ))
+    start_response('200 OK', [('Content-Type', 'text/html; charset=UTF-8')])
+
+    yield '<h1 id="tags">Tags</h1>\n'
+    for tag in commands.get_readable_tags(environ):
+        uri = '/tags/%s' % tag # XXX: server prefix & encoding
+        yield '<a href="%s">%s</a>\n' % (uri, tag)
 
 
 def get_tiddlers(environ, start_response): # TODO: rename

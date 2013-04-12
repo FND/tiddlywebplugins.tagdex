@@ -26,7 +26,7 @@ META = {
     'zip_safe': False,
     'install_requires': ['tiddlyweb>=1.4.8', 'tiddlywebplugins.utils'],
     'extras_require': {
-        'testing': ['pytest', 'wsgi-intercept', 'httplib2'],
+        'testing': ['pytest', 'wsgi-intercept', 'httplib2', 'pyquery'],
         'coverage': ['figleaf', 'coverage']
     }
 }

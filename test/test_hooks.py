@@ -14,8 +14,8 @@ def setup_module(module):
     module.CONFIG = { 'tagdex_db': 'tagdex_test.sqlite' }
     module.STORE = UserDict()
     module.STORE.environ = { 'tiddlyweb.config': CONFIG }
-    # reset database
     module.DB = database._db_path(module.CONFIG)
+    # reset database
     try:
         os.remove(module.DB)
     except OSError:

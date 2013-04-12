@@ -56,15 +56,15 @@ def test_tag_collection():
     tags, tiddlers = _extract_data(content)
     assert len(tiddlers) == 0
     assert len(tags) == 6
-    uris = tags.values()
-    tags = tags.keys()
+    uris = tags.keys()
+    tags = tags.values()
     for tag in ['foo', 'bar', 'baz', 'book', 'scifi', 'political']:
         assert tag in tags
         assert '/tags/%s' % tag in uris
     assert not 'secret' in tags
 
 
-def test_tiddler_collection():
+def test_tiddler_collection(): # TODO: rename
     http = httplib2.Http()
 
     response, content = http.request('http://example.org:8001/tags/foo',
@@ -116,13 +116,14 @@ def test_permission_handling():
             method='GET', headers={ 'Accept': 'text/plain' })
     tags, _ = _extract_data(content)
     assert len(tags) == 6
-    assert 'foo' in tags
-    assert 'bar' in tags
-    assert 'baz' in tags
-    assert 'book' in tags
-    assert 'scifi' in tags
-    assert 'political' in tags
-    assert not 'secret' in tags
+    tag_names = tags.values()
+    assert 'foo' in tag_names
+    assert 'bar' in tag_names
+    assert 'baz' in tag_names
+    assert 'book' in tag_names
+    assert 'scifi' in tag_names
+    assert 'political' in tag_names
+    assert not 'secret' in tag_names
 
     # ensure a single readable tiddler suffices
     _put_tiddler('AllEyes', 'bravo', ['secret'], '...')
@@ -132,7 +133,7 @@ def test_permission_handling():
     lines = content.splitlines()
     tags, _ = _extract_data(content)
     assert len(tags) == 7
-    assert 'secret' in tags
+    assert 'secret' in tags.values()
 
     response, content = http.request('http://example.org:8001/tags/foo,bar,baz',
             method='GET', headers={ 'Accept': 'text/html' })
@@ -195,6 +196,6 @@ def _get_section_links(doc, section_id):
         if link:
             label = link.text().strip()
             uri = link.attr("href")
-            links[label] = uri
+            links[uri] = label
         el = el.next()
     return links

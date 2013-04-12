@@ -34,7 +34,7 @@ def get_tiddlers(environ, start_response): # TODO: rename
         tiddlers.append(tiddler)
         tiddler_ids.append(_id)
 
-    yield '<h2>Related Tags</h2>\n'
+    yield '<h2 id="tags">Related Tags</h2>\n'
     for tag in commands.get_readable_related_tags(environ, tags, tiddler_ids):
         params = sorted(tags + [tag]) # sorting ensures consistency
 
@@ -47,7 +47,7 @@ def get_tiddlers(environ, start_response): # TODO: rename
         uri = '/tags/%s' % params # XXX: server prefix & encoding
         yield '<a href="%s">%s</a>\n' % (uri, tag)
 
-    yield '<h2>Tiddlers</h2>\n'
+    yield '<h2 id="tiddlers">Tiddlers</h2>\n'
     for tiddler in tiddlers:
         uri = '/bags/%s/tiddlers/%s' % (tiddler.bag, tiddler.title) # XXX: server prefix & encoding
         yield '<a href="%s">%s</a>\n' % (uri, tiddler.title)

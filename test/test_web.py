@@ -71,42 +71,55 @@ def test_tiddler_collection(): # TODO: rename
             method='GET', headers={ 'Accept': 'text/html' })
     assert response.status == 200
     assert response['content-type'] == 'text/html; charset=UTF-8'
-    assert '<a href="/tags/bar,foo">bar</a>' in content
-    assert '<a href="/bags/alpha/tiddlers/HelloWorld">HelloWorld</a>' in content
-    assert '<a href="/bags/bravo/tiddlers/HelloWorld">HelloWorld</a>' in content
-    assert not 'baz' in content
-    assert not 'secret' in content
-    assert not 'Lipsum' in content
+    tags, tiddlers = _extract_data(content)
+    tags = tags.items()
+    tiddlers = tiddlers.items()
+    assert len(tags) == 1
+    assert ('/tags/bar,foo', 'bar') in tags
+    assert len(tiddlers) == 2
+    assert ('/bags/alpha/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
+    assert ('/bags/bravo/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
 
     response, content = http.request('http://example.org:8001/tags/bar',
             method='GET', headers={ 'Accept': 'text/html' })
     assert response.status == 200
     assert response['content-type'] == 'text/html; charset=UTF-8'
-    assert '<a href="/tags/bar,foo">foo</a>' in content
-    assert '<a href="/tags/bar,baz">baz</a>' in content
-    assert '<a href="/bags/alpha/tiddlers/HelloWorld">HelloWorld</a>' in content
-    assert '<a href="/bags/bravo/tiddlers/HelloWorld">HelloWorld</a>' in content
-    assert '<a href="/bags/alpha/tiddlers/Lipsum">Lipsum</a>' in content
-    assert not 'secret' in content
+    tags, tiddlers = _extract_data(content)
+    tags = tags.items()
+    tiddlers = tiddlers.items()
+    assert len(tags) == 2
+    assert ('/tags/bar,foo', 'foo') in tags
+    assert ('/tags/bar,baz', 'baz') in tags
+    assert len(tiddlers) == 3
+    assert ('/bags/alpha/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
+    assert ('/bags/bravo/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
+    assert ('/bags/alpha/tiddlers/Lipsum', 'Lipsum') in tiddlers
 
     response, content = http.request('http://example.org:8001/tags/foo,baz',
             method='GET', headers={ 'Accept': 'text/html' })
     assert response.status == 200
     assert response['content-type'] == 'text/html; charset=UTF-8'
-    assert '<a href="/tags/bar,baz,foo">bar</a>' in content
-    assert '<a href="/bags/alpha/tiddlers/HelloWorld">HelloWorld</a>' in content
-    assert '<a href="/bags/bravo/tiddlers/HelloWorld">HelloWorld</a>' in content
-    assert '<a href="/bags/alpha/tiddlers/Lipsum">Lipsum</a>' in content
-    assert not 'secret' in content
+    tags, tiddlers = _extract_data(content)
+    tags = tags.items()
+    tiddlers = tiddlers.items()
+    assert len(tags) == 1
+    assert ('/tags/bar,baz,foo', 'bar') in tags
+    assert len(tiddlers) == 3
+    assert ('/bags/alpha/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
+    assert ('/bags/bravo/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
+    assert ('/bags/alpha/tiddlers/Lipsum', 'Lipsum') in tiddlers
 
     response, content = http.request('http://example.org:8001/tags/foo,bar,baz',
             method='GET', headers={ 'Accept': 'text/html' })
     assert response.status == 200
     assert response['content-type'] == 'text/html; charset=UTF-8'
-    assert not '/tags/' in content
-    assert '<a href="/bags/alpha/tiddlers/HelloWorld">HelloWorld</a>' in content
-    assert '<a href="/bags/bravo/tiddlers/HelloWorld">HelloWorld</a>' in content
-    assert '<a href="/bags/alpha/tiddlers/Lipsum">Lipsum</a>' in content
+    tags, tiddlers = _extract_data(content)
+    tiddlers = tiddlers.items()
+    assert len(tags) == 0
+    assert len(tiddlers) == 3
+    assert ('/bags/alpha/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
+    assert ('/bags/bravo/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
+    assert ('/bags/alpha/tiddlers/Lipsum', 'Lipsum') in tiddlers
 
 
 def test_permission_handling():
@@ -137,10 +150,13 @@ def test_permission_handling():
 
     response, content = http.request('http://example.org:8001/tags/foo,bar,baz',
             method='GET', headers={ 'Accept': 'text/html' })
-    assert not '/tags/' in content
-    assert '<a href="/bags/alpha/tiddlers/HelloWorld">HelloWorld</a>' in content
-    assert '<a href="/bags/bravo/tiddlers/HelloWorld">HelloWorld</a>' in content
-    assert '<a href="/bags/alpha/tiddlers/Lipsum">Lipsum</a>' in content
+    tags, tiddlers = _extract_data(content)
+    tiddlers = tiddlers.items()
+    assert len(tags) == 0
+    assert len(tiddlers) == 3
+    assert ('/bags/alpha/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
+    assert ('/bags/bravo/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
+    assert ('/bags/alpha/tiddlers/Lipsum', 'Lipsum') in tiddlers
 
     bag = Bag('bravo')
     bag.policy = Policy(read=['bob'])
@@ -148,10 +164,12 @@ def test_permission_handling():
 
     response, content = http.request('http://example.org:8001/tags/foo,bar,baz',
             method='GET', headers={ 'Accept': 'application/json' })
-    assert not '/tags/' in content
-    assert '<a href="/bags/alpha/tiddlers/HelloWorld">HelloWorld</a>' in content
-    assert '<a href="/bags/alpha/tiddlers/Lipsum">Lipsum</a>' in content
-    assert not '/bags/bravo/tiddlers/HelloWorld' in content
+    tags, tiddlers = _extract_data(content)
+    tiddlers = tiddlers.items()
+    assert len(tags) == 0
+    assert len(tiddlers) == 2
+    assert ('/bags/alpha/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
+    assert ('/bags/alpha/tiddlers/Lipsum', 'Lipsum') in tiddlers
 
 
 def _put_tiddler(title, bag, tags, body):

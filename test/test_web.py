@@ -47,13 +47,7 @@ def setup_module(module):
 
 
 def test_tag_collection():
-    http = httplib2.Http()
-
-    response, content = http.request('http://example.org:8001/tags',
-            method='GET', headers={ 'Accept': 'text/html' })
-    assert response.status == 200
-    assert response['content-type'] == 'text/html; charset=UTF-8'
-    tags, tiddlers = _extract_data(content)
+    tags, tiddlers = _get_html_data('/tags')
     assert len(tiddlers) == 0
     assert len(tags) == 6
     uris = tags.keys()
@@ -65,28 +59,14 @@ def test_tag_collection():
 
 
 def test_tiddler_collection(): # TODO: rename
-    http = httplib2.Http()
-
-    response, content = http.request('http://example.org:8001/tags/foo',
-            method='GET', headers={ 'Accept': 'text/html' })
-    assert response.status == 200
-    assert response['content-type'] == 'text/html; charset=UTF-8'
-    tags, tiddlers = _extract_data(content)
-    tags = tags.items()
-    tiddlers = tiddlers.items()
+    tags, tiddlers = _get_html_data('/tags/foo', True)
     assert len(tags) == 1
     assert ('/tags/bar,foo', 'bar') in tags
     assert len(tiddlers) == 2
     assert ('/bags/alpha/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
     assert ('/bags/bravo/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
 
-    response, content = http.request('http://example.org:8001/tags/bar',
-            method='GET', headers={ 'Accept': 'text/html' })
-    assert response.status == 200
-    assert response['content-type'] == 'text/html; charset=UTF-8'
-    tags, tiddlers = _extract_data(content)
-    tags = tags.items()
-    tiddlers = tiddlers.items()
+    tags, tiddlers = _get_html_data('/tags/bar', True)
     assert len(tags) == 2
     assert ('/tags/bar,foo', 'foo') in tags
     assert ('/tags/bar,baz', 'baz') in tags
@@ -95,13 +75,41 @@ def test_tiddler_collection(): # TODO: rename
     assert ('/bags/bravo/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
     assert ('/bags/alpha/tiddlers/Lipsum', 'Lipsum') in tiddlers
 
-    response, content = http.request('http://example.org:8001/tags/foo,baz',
-            method='GET', headers={ 'Accept': 'text/html' })
-    assert response.status == 200
-    assert response['content-type'] == 'text/html; charset=UTF-8'
-    tags, tiddlers = _extract_data(content)
-    tags = tags.items()
-    tiddlers = tiddlers.items()
+    tags, tiddlers = _get_html_data('/tags/book', True)
+    assert len(tags) == 2
+    assert ('/tags/book,scifi', 'scifi') in tags
+    assert ('/tags/book,political', 'political') in tags
+    assert len(tiddlers) == 2
+    assert ('/bags/alpha/tiddlers/1984', '1984') in tiddlers
+    assert ('/bags/alpha/tiddlers/Foundation', 'Foundation') in tiddlers
+
+    tags, tiddlers = _get_html_data('/tags/scifi', True)
+    assert len(tags) == 2
+    assert ('/tags/book,scifi', 'book') in tags
+    assert ('/tags/political,scifi', 'political') in tags
+    assert len(tiddlers) == 2
+    assert ('/bags/alpha/tiddlers/1984', '1984') in tiddlers
+    assert ('/bags/alpha/tiddlers/Foundation', 'Foundation') in tiddlers
+
+    tags, tiddlers = _get_html_data('/tags/book,scifi', True)
+    assert len(tags) == 1
+    assert ('/tags/book,political,scifi', 'political') in tags
+    assert len(tiddlers) == 2
+    assert ('/bags/alpha/tiddlers/1984', '1984') in tiddlers
+    assert ('/bags/alpha/tiddlers/Foundation', 'Foundation') in tiddlers
+
+    tags, tiddlers = _get_html_data('/tags/scifi,book', True)
+    assert len(tags) == 1
+    assert ('/tags/book,political,scifi', 'political') in tags
+    assert len(tiddlers) == 2
+    assert ('/bags/alpha/tiddlers/1984', '1984') in tiddlers
+    assert ('/bags/alpha/tiddlers/Foundation', 'Foundation') in tiddlers
+
+    tags, tiddlers = _get_html_data('/tags/book,scifi,political', True)
+    assert len(tags) == 0
+    assert ('/bags/alpha/tiddlers/1984', '1984') in tiddlers
+
+    tags, tiddlers = _get_html_data('/tags/foo,baz', True)
     assert len(tags) == 1
     assert ('/tags/bar,baz,foo', 'bar') in tags
     assert len(tiddlers) == 3
@@ -109,25 +117,15 @@ def test_tiddler_collection(): # TODO: rename
     assert ('/bags/bravo/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
     assert ('/bags/alpha/tiddlers/Lipsum', 'Lipsum') in tiddlers
 
-    response, content = http.request('http://example.org:8001/tags/foo,bar,baz',
-            method='GET', headers={ 'Accept': 'text/html' })
-    assert response.status == 200
-    assert response['content-type'] == 'text/html; charset=UTF-8'
-    tags, tiddlers = _extract_data(content)
-    tiddlers = tiddlers.items()
+    tags, tiddlers = _get_html_data('/tags/foo,bar,baz', True)
     assert len(tags) == 0
     assert len(tiddlers) == 3
     assert ('/bags/alpha/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
     assert ('/bags/bravo/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
     assert ('/bags/alpha/tiddlers/Lipsum', 'Lipsum') in tiddlers
 
-
 def test_permission_handling():
-    http = httplib2.Http()
-
-    response, content = http.request('http://example.org:8001/tags',
-            method='GET', headers={ 'Accept': 'text/plain' })
-    tags, _ = _extract_data(content)
+    tags, _ = _get_html_data('/tags')
     assert len(tags) == 6
     tag_names = tags.values()
     assert 'foo' in tag_names
@@ -141,17 +139,11 @@ def test_permission_handling():
     # ensure a single readable tiddler suffices
     _put_tiddler('AllEyes', 'bravo', ['secret'], '...')
 
-    response, content = http.request('http://example.org:8001/tags',
-            method='GET', headers={ 'Accept': 'text/plain' })
-    lines = content.splitlines()
-    tags, _ = _extract_data(content)
+    tags, _ = _get_html_data('/tags')
     assert len(tags) == 7
     assert 'secret' in tags.values()
 
-    response, content = http.request('http://example.org:8001/tags/foo,bar,baz',
-            method='GET', headers={ 'Accept': 'text/html' })
-    tags, tiddlers = _extract_data(content)
-    tiddlers = tiddlers.items()
+    tags, tiddlers = _get_html_data('/tags/foo,bar,baz', True)
     assert len(tags) == 0
     assert len(tiddlers) == 3
     assert ('/bags/alpha/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
@@ -162,10 +154,7 @@ def test_permission_handling():
     bag.policy = Policy(read=['bob'])
     STORE.put(bag)
 
-    response, content = http.request('http://example.org:8001/tags/foo,bar,baz',
-            method='GET', headers={ 'Accept': 'application/json' })
-    tags, tiddlers = _extract_data(content)
-    tiddlers = tiddlers.items()
+    tags, tiddlers = _get_html_data('/tags/foo,bar,baz', True)
     assert len(tags) == 0
     assert len(tiddlers) == 2
     assert ('/bags/alpha/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
@@ -182,6 +171,19 @@ def _put_tiddler(title, bag, tags, body):
             headers={ 'Content-Type': 'text/plain' }, body=rep)
     if not response.status == 204:
         raise RuntimeError(content)
+
+
+def _get_html_data(uri, as_tuples=False):
+    http = httplib2.Http()
+    response, content = http.request('http://example.org:8001' + uri,
+            method='GET', headers={ 'Accept': 'text/html' })
+    assert response.status == 200
+    assert response['content-type'] == 'text/html; charset=UTF-8'
+    tags, tiddlers = _extract_data(content)
+    if as_tuples:
+        return tags.items(), tiddlers.items()
+    else:
+        return tags, tiddlers
 
 
 def _initialize_app(cfg):

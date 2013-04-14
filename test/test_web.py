@@ -41,7 +41,7 @@ def setup_module(module):
     _put_tiddler('HelloWorld', 'alpha', ['foo', 'bar'], 'lorem ipsum')
     _put_tiddler('HelloWorld', 'bravo', ['foo', 'bar'], 'lorem ipsum')
     _put_tiddler('Lipsum', 'alpha', ['bar', 'baz'], '...')
-    _put_tiddler('Confidential', 'charlie', ['secret'], '...')
+    _put_tiddler('Confidential', 'charlie', ['private', 'secret'], '...')
     _put_tiddler('1984', 'alpha', ['book', 'scifi', 'political'], 'Orwell, G.')
     _put_tiddler('Foundation', 'alpha', ['book', 'scifi'], 'Asimov, I.')
 
@@ -105,24 +105,25 @@ def test_tiddler_collection(): # TODO: rename
     assert ('/bags/alpha/tiddlers/1984', '1984') in tiddlers
     assert ('/bags/alpha/tiddlers/Foundation', 'Foundation') in tiddlers
 
+    tags, tiddlers = _get_html_data('/tags/book,political', True)
+    assert len(tags) == 1
+    assert ('/tags/book,political,scifi', 'scifi') in tags
+    assert len(tiddlers) == 1
+    assert ('/bags/alpha/tiddlers/1984', '1984') in tiddlers
+
     tags, tiddlers = _get_html_data('/tags/book,scifi,political', True)
     assert len(tags) == 0
+    assert len(tiddlers) == 1
     assert ('/bags/alpha/tiddlers/1984', '1984') in tiddlers
 
     tags, tiddlers = _get_html_data('/tags/foo,baz', True)
-    assert len(tags) == 1
-    assert ('/tags/bar,baz,foo', 'bar') in tags
-    assert len(tiddlers) == 3
-    assert ('/bags/alpha/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
-    assert ('/bags/bravo/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
-    assert ('/bags/alpha/tiddlers/Lipsum', 'Lipsum') in tiddlers
+    assert len(tags) == 0
+    assert len(tiddlers) == 0
 
     tags, tiddlers = _get_html_data('/tags/foo,bar,baz', True)
     assert len(tags) == 0
-    assert len(tiddlers) == 3
-    assert ('/bags/alpha/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
-    assert ('/bags/bravo/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
-    assert ('/bags/alpha/tiddlers/Lipsum', 'Lipsum') in tiddlers
+    assert len(tiddlers) == 0
+
 
 def test_permission_handling():
     tags, _ = _get_html_data('/tags')
@@ -136,29 +137,72 @@ def test_permission_handling():
     assert 'political' in tag_names
     assert not 'secret' in tag_names
 
-    # ensure a single readable tiddler suffices
+    tags, tiddlers = _get_html_data('/tags/secret')
+    assert len(tags) == 0
+    assert len(tiddlers) == 0
+
+    tags, tiddlers = _get_html_data('/tags/private')
+    assert len(tags) == 0
+    assert len(tiddlers) == 0
+
+    tags, tiddlers = _get_html_data('/tags/private,secret')
+    assert len(tags) == 0
+    assert len(tiddlers) == 0
+
+    # ensure a single readable tiddler suffices for the tag to show up
+
     _put_tiddler('AllEyes', 'bravo', ['secret'], '...')
 
     tags, _ = _get_html_data('/tags')
     assert len(tags) == 7
     assert 'secret' in tags.values()
 
-    tags, tiddlers = _get_html_data('/tags/foo,bar,baz', True)
+    tags, tiddlers = _get_html_data('/tags/secret', True)
     assert len(tags) == 0
-    assert len(tiddlers) == 3
+    assert len(tiddlers) == 1
+    assert ('/bags/bravo/tiddlers/AllEyes', 'AllEyes') in tiddlers
+
+    tags, tiddlers = _get_html_data('/tags/private')
+    assert len(tags) == 0
+    assert len(tiddlers) == 0
+
+    tags, tiddlers = _get_html_data('/tags/private,secret')
+    assert len(tags) == 0
+    assert len(tiddlers) == 0
+
+    _put_tiddler('AllEyes', 'bravo', ['private', 'secret'], '...')
+
+    tags, tiddlers = _get_html_data('/tags/secret', True)
+    assert len(tags) == 1
+    assert ('/tags/private,secret', 'private') in tags
+    assert len(tiddlers) == 1
+    assert ('/bags/bravo/tiddlers/AllEyes', 'AllEyes') in tiddlers
+
+    tags, tiddlers = _get_html_data('/tags/private', True)
+    assert len(tags) == 1
+    assert ('/tags/private,secret', 'secret') in tags
+    assert len(tiddlers) == 1
+    assert ('/bags/bravo/tiddlers/AllEyes', 'AllEyes') in tiddlers
+
+    tags, tiddlers = _get_html_data('/tags/private,secret', True)
+    assert len(tags) == 0
+    assert len(tiddlers) == 1
+    assert ('/bags/bravo/tiddlers/AllEyes', 'AllEyes') in tiddlers
+
+    tags, tiddlers = _get_html_data('/tags/foo,bar', True)
+    assert len(tags) == 0
+    assert len(tiddlers) == 2
     assert ('/bags/alpha/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
     assert ('/bags/bravo/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
-    assert ('/bags/alpha/tiddlers/Lipsum', 'Lipsum') in tiddlers
 
     bag = Bag('bravo')
     bag.policy = Policy(read=['bob'])
     STORE.put(bag)
 
-    tags, tiddlers = _get_html_data('/tags/foo,bar,baz', True)
+    tags, tiddlers = _get_html_data('/tags/foo,bar', True)
     assert len(tags) == 0
-    assert len(tiddlers) == 2
+    assert len(tiddlers) == 1
     assert ('/bags/alpha/tiddlers/HelloWorld', 'HelloWorld') in tiddlers
-    assert ('/bags/alpha/tiddlers/Lipsum', 'Lipsum') in tiddlers
 
 
 def _put_tiddler(title, bag, tags, body):

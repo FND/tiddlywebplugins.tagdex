@@ -49,21 +49,26 @@ def get_all_tagged_tiddlers(config, tags):
     yields both a Tiddler object and the respective ID
     """
     with database.Connection(config) as (conn, cur):
-        sql = """
-        SELECT DISTINCT tiddlers.id, bag, title FROM tiddlers
-        JOIN tiddler_tags ON tiddler_tags.tiddler_id=tiddlers.id
-        JOIN tags ON tiddler_tags.tag_id=tags.id
-        WHERE %s
-        """
-        if len(tags) == 1:
-            sql = sql % 'tags.name = ?'
-            params = (tags[0],)
-        else:
-            sql = sql % 'tags.name IN (%s)'
-            sql = sql % ', '.join('?' * len(tags))
-            params = tags
+        tag_ids = database.fetch_tag_ids(cur, *tags)
+        tag_count = len(tags)
+        if len(tag_ids) != tag_count:
+            raise ValueError('tag not found') # XXX: uninformative; which one?
 
-        tiddlers = []
+        sql = """
+        SELECT tiddlers.id, bag, title FROM tiddlers
+        LEFT JOIN tiddler_tags
+        ON tiddler_tags.tiddler_id=tiddlers.id
+        AND tiddler_tags.%s
+        GROUP BY tiddlers.id HAVING COUNT(tiddler_tags.tag_id) = %s
+        """ % ('%s', tag_count)
+        if tag_count == 1:
+            sql = sql % 'tag_id = ?'
+            params = (tag_ids[0],)
+        else:
+            sql = sql % 'tag_id IN (%s)'
+            sql = sql % ', '.join('?' * tag_count)
+            params = tag_ids
+
         for _id, bag, title in query(cur, sql, params):
             yield _id, Tiddler(title, bag) # ID included for subsequent queries
 
@@ -75,18 +80,11 @@ def get_readable_tagged_tiddlers(environ, tags):
 
     yields both a Tiddler object and the respective ID
     """
-    with database.Connection(environ['tiddlyweb.config']) as (conn, cur):
-        sql = """
-        SELECT DISTINCT tiddlers.id, bag, title FROM tiddlers
-        JOIN tiddler_tags ON tiddler_tags.tiddler_id=tiddlers.id
-        JOIN tags ON tiddler_tags.tag_id=tags.id
-        WHERE tags.name IN (%s)
-        """
-        sql = sql % ', '.join('?' * len(tags))
+    config = environ['tiddlyweb.config']
 
-        tids_by_bag = defaultdict(lambda: set())
-        for _id, bag, title in query(cur, sql, tags):
-            tids_by_bag[bag].add((_id, title))
+    tids_by_bag = defaultdict(lambda: set())
+    for _id, tiddler in get_all_tagged_tiddlers(config, tags):
+        tids_by_bag[tiddler.bag].add((_id, tiddler.title))
 
     for bag, tids in tids_by_bag.items():
         if _readable(environ, bag):

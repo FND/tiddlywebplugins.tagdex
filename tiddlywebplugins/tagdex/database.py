@@ -28,29 +28,32 @@ class Connection(object): # TODO: reuse connections for efficiency?
         self.conn.close()
 
 
-def query(cursor, sql, params=None):
-    LOG.debug("querying database: %s" % ' '.join(line.lstrip() for line
-            in sql.splitlines()))
-    return cursor.execute(sql, params) if params else cursor.execute(sql)
+def fetch_tag_ids(cursor, *tag_names):
+    sql = 'SELECT id FROM tags WHERE %s'
+    if len(tag_names) == 1:
+        sql = sql % 'tags.name = ?'
+        params = (tag_names[0],)
+    else:
+        sql = sql % 'tags.name IN (%s)'
+        sql = sql % ', '.join('?' * len(tag_names))
+        params = tag_names
+
+    return [row[0] for row in query(cursor, sql, params)]
 
 
 def fetch_tiddler_id(tiddler, cursor):
-    tid_id = (query(cursor,
-            'SELECT id FROM tiddlers WHERE title = ? AND bag = ?',
-            (tiddler.title, tiddler.bag)).fetchone())
+    sql = 'SELECT id FROM tiddlers WHERE title = ? AND bag = ?'
+    tid_id = (query(cursor, sql, (tiddler.title, tiddler.bag)).fetchone())
     try:
         return tid_id[0]
     except TypeError:
         return False
 
 
-def fetch_tag_id(tag_name, cursor):
-    tag_id = (query(cursor, 'SELECT id FROM tags WHERE name = ?', (tag_name,)).
-            fetchone())
-    try:
-        return tag_id[0]
-    except TypeError:
-        return False
+def query(cursor, sql, params=None):
+    LOG.debug("querying database: %s" % ' '.join(line.lstrip() for line
+            in sql.splitlines()))
+    return cursor.execute(sql, params) if params else cursor.execute(sql)
 
 
 def initialize(cursor):

@@ -21,8 +21,9 @@ def tiddler_put_hook(store, tiddler):
 
         for tag in tiddler.tags:
             # fetch or create tag
-            tag_id = database.fetch_tag_id(tag, cur)
-            if not tag_id:
+            try:
+                tag_id = database.fetch_tag_ids(cur, tag)[0]
+            except IndexError:
                 tag_id = query(cur, 'INSERT INTO tags VALUES (?, ?)',
                     (None, tag)).lastrowid
 

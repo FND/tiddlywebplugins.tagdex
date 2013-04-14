@@ -203,19 +203,19 @@ def _initialize_app(cfg):
 
 def _extract_data(html):
     doc = pq(html)
-    tags = _get_section_links(doc, "#tags")
-    tiddlers = _get_section_links(doc, "#tiddlers")
+    tags = _get_section_links(doc, '#tags')
+    tiddlers = _get_section_links(doc, '#tiddlers')
     return tags, tiddlers
 
 
 def _get_section_links(doc, section_id):
     el = doc(section_id).next()
     links = {}
-    while el and not el.is_("h1, h2, h3, h4, h5, h6"): # stop at next section
-        link = el if el.is_("a") else el.find("a:first")
+    while el and not el.is_('h1, h2, h3, h4, h5, h6'): # stop at next section
+        link = el if el.is_('a') else el.find('a:first')
         if link:
             label = link.text().strip()
-            uri = link.attr("href")
+            uri = link.attr('href')
             links[uri] = label
         el = el.next()
     return links

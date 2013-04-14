@@ -18,7 +18,7 @@ class Connection(object): # TODO: reuse connections for efficiency?
 
     def __enter__(self):
         db = _db_path(self.config)
-        LOG.debug("establishing database connection: %s" % db)
+        LOG.debug('establishing database connection: %s' % db)
         self.conn = sqlite3.connect(db)
         return self.conn, self.conn.cursor()
 
@@ -51,7 +51,7 @@ def fetch_tiddler_id(tiddler, cursor):
 
 
 def query(cursor, sql, params=None):
-    LOG.debug("querying database: %s" % ' '.join(line.lstrip() for line
+    LOG.debug('querying database: %s' % ' '.join(line.lstrip() for line
             in sql.splitlines()))
     return cursor.execute(sql, params) if params else cursor.execute(sql)
 

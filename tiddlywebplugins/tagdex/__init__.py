@@ -28,6 +28,8 @@ def init(config):
         """
         if len(args) == 0:
             print '\n'.join(tag for tag in commands.get_all_tags(config))
+        elif args[0] == '--reindex': # XXX: hacky overloading!?
+            commands.reindex(config)
         else:
             tiddlers = []
             tiddler_ids = []

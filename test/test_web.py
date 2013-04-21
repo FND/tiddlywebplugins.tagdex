@@ -25,12 +25,7 @@ def setup_module(module):
     cfg = _initialize_app({ 'tagdex_db': 'tagdex_test.sqlite' })
     module.STORE = get_store(cfg)
 
-    # reset database
-    db = database._db_path(cfg)
-    try:
-        os.remove(db)
-    except OSError:
-        pass
+    database.reset(cfg)
 
     module.STORE.put(Bag('alpha'))
     module.STORE.put(Bag('bravo'))

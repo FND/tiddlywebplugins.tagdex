@@ -56,6 +56,21 @@ def query(cursor, sql, params=None):
     return cursor.execute(sql, params) if params else cursor.execute(sql)
 
 
+def reset(config, reinit=False):
+    """
+    erase and re-initialize database
+    """
+    db = _db_path(config)
+    try:
+        os.remove(db)
+    except OSError:
+        pass
+
+    if reinit:
+        with Connection(config, True) as (conn, cur):
+            initialize(cur)
+
+
 def initialize(cursor):
     """
     create database tables

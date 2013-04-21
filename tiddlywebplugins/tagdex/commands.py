@@ -4,8 +4,9 @@ from tiddlyweb.model.bag import Bag
 from tiddlyweb.model.tiddler import Tiddler
 from tiddlyweb.model.policy import PermissionsError
 from tiddlyweb.web.util import check_bag_constraint
+from tiddlywebplugins.utils import get_store
 
-from . import database
+from . import hooks, database
 from .database import query
 
 
@@ -134,6 +135,18 @@ def get_readable_related_tags(environ, tags, tiddler_ids): # XXX: partially dupl
                 results.add(tag)
 
     return results
+
+
+def reindex(config):
+    """
+    recreate index
+    """
+    database.reset(config, True)
+    store = get_store(config)
+    for bag in store.list_bags():
+        for tiddler in store.list_bag_tiddlers(bag):
+            print "processing %s/%s" % (bag.name, tiddler.title)
+            hooks.tiddler_put_hook(store, tiddler)
 
 
 def _readable(environ, bag_name):

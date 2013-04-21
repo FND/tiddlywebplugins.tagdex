@@ -15,11 +15,8 @@ def setup_module(module):
     module.STORE = UserDict()
     module.STORE.environ = { 'tiddlyweb.config': CONFIG }
     module.DB = database._db_path(module.CONFIG)
-    # reset database
-    try:
-        os.remove(module.DB)
-    except OSError:
-        pass
+
+    database.reset(module.CONFIG)
 
 
 def test_initialization():

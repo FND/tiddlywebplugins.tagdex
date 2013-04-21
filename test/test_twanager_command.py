@@ -21,13 +21,7 @@ def setup_module(module):
     module.STDOUT = getattr(sys, 'stdout')
     setattr(sys, 'stdout', StringIO())
 
-    # reset database
-    db = database._db_path(config)
-    try:
-        os.remove(db)
-    except OSError:
-        pass
-
+    database.reset(config)
     tagdex.init(config)
 
 

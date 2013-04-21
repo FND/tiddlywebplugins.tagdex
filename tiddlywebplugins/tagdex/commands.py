@@ -110,21 +110,21 @@ def get_all_related_tags(config, tags, tiddler_ids):
                 yield tag
 
 
-def get_readable_related_tags(environ, tags, tiddler_ids):
+def get_readable_related_tags(environ, tags, tiddler_ids): # XXX: partially duplicates _all_ equivalent
     """
     retrieve related tags readable by the current user for the given list of
     tags / tagged tiddlers
     """
     with database.Connection(environ['tiddlyweb.config']) as (conn, cur):
         sql = """
-        SELECT DISTINCT name, bag, title FROM tags
+        SELECT DISTINCT name, bag FROM tags
         JOIN tiddler_tags ON tiddler_tags.tag_id=tags.id
         JOIN tiddlers ON tiddler_tags.tiddler_id=tiddlers.id
         WHERE tiddlers.id IN (%s)
-        """ % ', '.join('?' * len(tiddler_ids)) # XXX: DEBUG title included only for debugging
+        """ % ', '.join('?' * len(tiddler_ids))
 
         tags_by_bag = defaultdict(lambda: set())
-        for tag, bag, title in query(cur, sql, tiddler_ids):
+        for tag, bag in query(cur, sql, tiddler_ids):
             tags_by_bag[bag].add(tag)
 
     results = set()

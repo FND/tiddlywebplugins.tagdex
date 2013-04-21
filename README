@@ -4,5 +4,5 @@ tagdex
 TiddlyWeb indexer for tag-based tiddler retrieval
 
 * `/tags`: list of all tags
-* `/tags/<tags>`: list of all tiddlers with the specified tag(s) - `<tags>` is a
-  CSV-style list of tags (e.g. `foo,bar` or `foo,"lorem ipsum",bar`)
+* `/tags/<tags>`: list of all tiddlers carrying the specified tag(s) - `<tags>`
+  is a CSV-style list of tags (e.g. `foo,bar` or `foo,"lorem ipsum",bar`)

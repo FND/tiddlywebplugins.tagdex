@@ -7,6 +7,8 @@ from . import database, hooks, commands, web
 
 
 def init(config):
+    config.setdefault('tagdex_db', 'tagdex.sqlite')
+
     HOOKS['tiddler']['put'].append(hooks.tiddler_put_hook)
     HOOKS['tiddler']['delete'].append(hooks.tiddler_delete_hook)
 

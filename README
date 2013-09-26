@@ -6,3 +6,8 @@ TiddlyWeb indexer for tag-based tiddler retrieval
 * `/tags`: list of all tags
 * `/tags/<tags>`: list of all tiddlers carrying the specified tag(s) - `<tags>`
   is a CSV-style list of tags (e.g. `foo,bar` or `foo,"lorem ipsum",bar`)
+
+add `'tiddlywebplugins.tagdex'` to both `config['system_plugins']` and
+`config['twanager_plugins']`
+
+the database location can be customized via `config['tagdex_db']`
